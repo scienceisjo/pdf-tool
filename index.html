@@ -111,6 +111,30 @@
   .thumb .ctrl button{border:none; background:#eef1f6; border-radius:6px; min-width:26px; height:26px; cursor:pointer; font-size:13px; line-height:1}
   .thumb .ctrl button:hover{background:#dbe3f0}
   .imgprev{width:52px; height:52px; object-fit:cover; border-radius:6px; border:1px solid var(--line); background:#fff}
+  /* 분할 갤러리 */
+  .split-toolbar{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .split-info{font-size:13.5px; color:var(--sub); font-weight:600}
+  .split-tools{display:flex; gap:6px; flex-wrap:wrap}
+  .minibtn{border:1px solid var(--line); background:#fff; color:var(--ink); padding:6px 10px;
+    border-radius:8px; cursor:pointer; font-size:12.5px; font-family:inherit}
+  .minibtn:hover{border-color:var(--brand); color:var(--brand)}
+  .sgallery{display:flex; flex-wrap:wrap; gap:0; margin-top:12px; user-select:none}
+  .scell{display:flex; align-items:stretch}
+  .spage{width:104px; padding:6px; border:2px solid var(--line); border-radius:9px; background:#fff;
+    text-align:center; cursor:pointer; transition:border-color .1s, background .1s}
+  .spage .simgbox{height:120px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; border-radius:5px}
+  .spage img{max-width:90px; max-height:112px; border:1px solid #eee; background:#fff; pointer-events:none}
+  .spage .snum{font-size:11.5px; color:var(--sub); margin-top:4px}
+  .spage.sel{border-color:var(--brand); background:#eaf1ff}
+  .spage.sel .snum{color:var(--brand); font-weight:700}
+  /* 페이지 사이 가위 영역 */
+  .scut{width:26px; display:flex; align-items:center; justify-content:center; position:relative}
+  .scut button{border:none; background:transparent; cursor:pointer; font-size:15px; line-height:1;
+    color:#c0c6d0; padding:4px 2px; border-radius:6px; transition:.1s}
+  .scut button:hover{color:var(--warn); background:#fef2f2; transform:scale(1.25)}
+  .scut.cut button{color:var(--warn)}
+  .scut.cut::before{content:""; position:absolute; top:4px; bottom:4px; left:50%; width:0;
+    border-left:2px dashed var(--warn)}
   footer{text-align:center; color:var(--sub); font-size:12.5px; padding:24px; line-height:1.9}
   footer .credit{font-weight:600; color:#4b5563}
 </style>
@@ -155,7 +179,7 @@
   <!-- 분할 -->
   <div class="panel" id="panel-split">
     <h2>PDF를 나누기</h2>
-    <p class="desc">특정 페이지만 뽑아내거나, 각 페이지를 개별 파일로 분리합니다.</p>
+    <p class="desc">페이지를 미리 보면서 <b>드래그로 범위를 선택</b>하거나, 페이지 사이 <b>가위(✂)</b>로 잘라 나눕니다.</p>
     <div class="drop" id="drop-split">
       <b>클릭</b>하거나 파일을 여기로 <b>끌어다 놓으세요</b>
       <small>PDF 파일 1개</small>
@@ -163,24 +187,24 @@
     <input type="file" id="file-split" accept="application/pdf">
     <div class="list" id="list-split"></div>
 
-    <div id="split-opts" style="display:none">
-      <label class="f">분할 방식</label>
-      <div class="radios">
-        <label><input type="radio" name="splitmode" value="range" checked>
-          <span><span class="t">페이지 범위 추출</span><br>
-          <span class="s">원하는 페이지만 골라 하나의 PDF로</span></span></label>
-        <label><input type="radio" name="splitmode" value="each">
-          <span><span class="t">각 페이지를 개별 PDF로</span><br>
-          <span class="s">전체를 페이지마다 낱장 파일로 분리 (ZIP으로 한 번에 저장 가능)</span></span></label>
+    <div id="split-visual" style="display:none">
+      <div class="split-toolbar">
+        <span id="split-info" class="split-info"></span>
+        <span class="split-tools">
+          <button class="minibtn" id="split-selectall">전체 선택</button>
+          <button class="minibtn" id="split-clear">선택 해제</button>
+          <button class="minibtn" id="split-cutall">✂ 모두 낱장</button>
+          <button class="minibtn" id="split-cutreset">가위 초기화</button>
+        </span>
       </div>
-      <div id="range-box">
-        <label class="f">추출할 페이지</label>
-        <input type="text" id="split-range" placeholder="예: 1-3, 5, 8-10">
-        <div class="hint">쉼표로 구분, 하이픈으로 범위 지정. (예: <b>1-3, 5, 8-10</b>)</div>
+      <div class="hint" id="split-help">
+        · 페이지를 <b>클릭</b> 또는 <b>드래그</b>하면 범위가 선택돼요(파란색). · 페이지 사이 <b>✂</b>를 누르면 그 자리에서 잘려요(색깔 구간으로 나뉨).
       </div>
+      <div class="sgallery" id="split-gallery"></div>
     </div>
 
-    <button class="btn" id="btn-split" disabled>PDF 분할하기</button>
+    <button class="btn" id="btn-split-extract" disabled>선택한 페이지 추출하기</button>
+    <button class="btn" id="btn-split-cut" style="background:#0d9488;margin-top:10px" disabled>가위로 자른 대로 분할하기</button>
     <div class="bar" id="bar-split"><div></div></div>
     <div class="status" id="status-split"></div>
     <div class="results" id="results-split"></div>
@@ -697,6 +721,26 @@ document.querySelectorAll(".tab").forEach(tab=>{
 
 // ================= 병합 =================
 let mergeFiles = [];
+const mergeThumbCache = new WeakMap();   // File → 첫 페이지 미리보기 dataURL
+async function firstPageThumb(file){
+  if(mergeThumbCache.has(file)) return mergeThumbCache.get(file);
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: buf.slice(0)}).promise;
+    const page = await pdf.getPage(1);
+    const vp1 = page.getViewport({scale:1});
+    const sc = Math.min(46/vp1.width, 60/vp1.height, 1);
+    const vp = page.getViewport({scale:sc});
+    const c = document.createElement("canvas");
+    c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+    const ctx = c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:ctx, viewport:vp, intent:"print"}).promise;
+    const url = c.toDataURL("image/jpeg",0.7);
+    mergeThumbCache.set(file, url);
+    page.cleanup();
+    return url;
+  }catch(e){ return null; }
+}
 setupDrop("drop-merge","file-merge", files=>{ mergeFiles.push(...files); renderMerge(); });
 function renderMerge(){
   const list = document.getElementById("list-merge");
@@ -706,11 +750,13 @@ function renderMerge(){
     row.className = "item";
     row.innerHTML = `
       <span class="meta">${i+1}</span>
+      <img class="imgprev mthumb" alt="">
       <span class="name">${f.name}</span>
       <span class="meta">${fmtSize(f.size)}</span>
       <button class="move" data-a="up" title="위로">▲</button>
       <button class="move" data-a="down" title="아래로">▼</button>
       <button data-a="del" title="삭제">✕</button>`;
+    firstPageThumb(f).then(url=>{ if(url) row.querySelector(".mthumb").src = url; });
     row.querySelector('[data-a=up]').onclick = ()=>{ if(i>0){[mergeFiles[i-1],mergeFiles[i]]=[mergeFiles[i],mergeFiles[i-1]]; renderMerge();} };
     row.querySelector('[data-a=down]').onclick = ()=>{ if(i<mergeFiles.length-1){[mergeFiles[i+1],mergeFiles[i]]=[mergeFiles[i],mergeFiles[i+1]]; renderMerge();} };
     row.querySelector('[data-a=del]').onclick = ()=>{ mergeFiles.splice(i,1); renderMerge(); };
@@ -741,64 +787,188 @@ document.getElementById("btn-merge").onclick = async ()=>{
   finally{ setBar("bar-merge", null); btn.disabled = false; }
 };
 
-// ================= 분할 =================
-let splitFile = null;
-setupDrop("drop-split","file-split", files=>{ splitFile = files[0]; renderSplit(); });
-function renderSplit(){
+// ================= 분할 (갤러리 + 드래그 범위 + 가위) =================
+let splitFile = null, splitBytes = null, splitPages = [];
+const splitSel = new Set();     // 선택된 페이지 인덱스(0-based)
+const splitCuts = new Set();    // "이 페이지 뒤에서 자름" 인덱스 (0 ~ total-2)
+let splitCells = [];            // 각 페이지 DOM 참조
+let splitDragging = false, splitAnchor = 0, splitDragMoved = false;
+const SEG_COLORS = ["#3b6fe0","#16a34a","#d97706","#9333ea","#dc2626","#0891b2","#ca8a04","#db2777"];
+
+setupDrop("drop-split","file-split", files=>{ loadSplit(files[0]); });
+
+async function loadSplit(file){
+  splitFile = file; splitBytes = null; splitPages = [];
+  splitSel.clear(); splitCuts.clear(); splitCells = [];
   const list = document.getElementById("list-split");
   list.innerHTML = "";
-  document.getElementById("split-opts").style.display = splitFile ? "block" : "none";
-  document.getElementById("btn-split").disabled = !splitFile;
-  if(splitFile){
-    const row = document.createElement("div");
-    row.className = "item";
-    row.innerHTML = `<span class="name">${splitFile.name}</span>
-      <span class="meta">${fmtSize(splitFile.size)}</span>
-      <button data-a="del" title="삭제">✕</button>`;
-    row.querySelector('[data-a=del]').onclick = ()=>{ splitFile=null; renderSplit(); document.getElementById("results-split").innerHTML=""; setStatus("status-split",""); };
-    list.appendChild(row);
-  }
-}
-document.querySelectorAll('input[name=splitmode]').forEach(r=>{
-  r.onchange = ()=>{ document.getElementById("range-box").style.display = (r.value==="range" && r.checked) ? "block":"none"; };
-});
-document.getElementById("btn-split").onclick = async ()=>{
-  if(!splitFile) return;
-  const btn = document.getElementById("btn-split"); btn.disabled = true;
+  document.getElementById("split-gallery").innerHTML = "";
   document.getElementById("results-split").innerHTML = "";
-  setStatus("status-split","분할 중...",""); setBar("bar-split", 10);
-  const mode = document.querySelector('input[name=splitmode]:checked').value;
+  document.getElementById("split-visual").style.display = "none";
+  document.getElementById("btn-split-extract").disabled = true;
+  document.getElementById("btn-split-cut").disabled = true;
+  if(!file) return;
+  const row = document.createElement("div");
+  row.className = "item";
+  row.innerHTML = `<span class="name">${file.name}</span>
+    <span class="meta">${fmtSize(file.size)}</span>
+    <button data-a="del" title="삭제">✕</button>`;
+  row.querySelector('[data-a=del]').onclick = ()=>{ loadSplit(null); setStatus("status-split",""); };
+  list.appendChild(row);
+  setStatus("status-split","미리보기 만드는 중...",""); setBar("bar-split", 3);
+  try{
+    splitBytes = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: splitBytes.slice(0)}).promise;
+    const total = pdf.numPages;
+    for(let i=1;i<=total;i++){
+      const page = await pdf.getPage(i);
+      const vp1 = page.getViewport({scale:1});
+      const sc = Math.min(88/vp1.width, 112/vp1.height, 1.5);
+      const vp = page.getViewport({scale:sc});
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+      await page.render({canvasContext:ctx, viewport:vp, intent:"print"}).promise;
+      splitPages.push({srcIndex:i-1, thumb:canvas.toDataURL("image/jpeg",0.7)});
+      setBar("bar-split", 3 + Math.round(i/total*90));
+      page.cleanup();
+    }
+    setBar("bar-split", null);
+    document.getElementById("split-visual").style.display = "block";
+    renderSplitGallery();
+    setStatus("status-split", `${total}쪽 불러왔어요. 드래그로 범위를 고르거나 ✂로 잘라보세요.`, "ok");
+  }catch(e){ console.error(e); setBar("bar-split", null); setStatus("status-split","오류: "+e.message,"err"); }
+}
+
+// 가위 표시로 나뉜 구간들 → [{start,end}...] (inclusive, 0-based)
+function splitSegments(){
+  const total = splitPages.length, segs = []; let start = 0;
+  for(let i=0;i<total-1;i++){ if(splitCuts.has(i)){ segs.push({start, end:i}); start=i+1; } }
+  segs.push({start, end:total-1});
+  return segs;
+}
+function segIndexOfPage(i, segs){ return segs.findIndex(s=> i>=s.start && i<=s.end); }
+
+function renderSplitGallery(){
+  const box = document.getElementById("split-gallery");
+  box.innerHTML = ""; splitCells = [];
+  const total = splitPages.length;
+  const segs = splitSegments();
+  const showSeg = splitCuts.size > 0;
+  splitPages.forEach((p,i)=>{
+    const cell = document.createElement("div");
+    cell.className = "scell";
+    const pg = document.createElement("div");
+    pg.className = "spage" + (splitSel.has(i) ? " sel":"");
+    const segColor = SEG_COLORS[ (showSeg ? segIndexOfPage(i,segs) : 0) % SEG_COLORS.length ];
+    pg.innerHTML = `
+      <div class="simgbox"><img src="${p.thumb}"></div>
+      <div class="snum">${i+1}쪽</div>
+      <div class="sseg" style="height:4px;border-radius:3px;margin-top:4px;background:${showSeg?segColor:'transparent'}"></div>`;
+    pg.onmousedown = (e)=>{ e.preventDefault(); splitDragging=true; splitAnchor=i; splitDragMoved=false; };
+    pg.onmouseenter = ()=>{ if(splitDragging){ splitDragMoved=true; selectSplitRange(splitAnchor, i); } };
+    cell.appendChild(pg);
+    splitCells[i] = pg;
+    // 페이지 사이 가위
+    if(i < total-1){
+      const cut = document.createElement("div");
+      cut.className = "scut" + (splitCuts.has(i) ? " cut":"");
+      const b = document.createElement("button");
+      b.textContent = "✂"; b.title = (i+1)+"쪽과 "+(i+2)+"쪽 사이에서 자르기";
+      b.onclick = (e)=>{ e.stopPropagation();
+        if(splitCuts.has(i)) splitCuts.delete(i); else splitCuts.add(i);
+        renderSplitGallery(); updateSplitInfo();
+      };
+      cut.appendChild(b);
+      cell.appendChild(cut);
+    }
+    box.appendChild(cell);
+  });
+  updateSplitInfo();
+}
+function selectSplitRange(a, b){
+  const lo = Math.min(a,b), hi = Math.max(a,b);
+  splitSel.clear();
+  for(let k=lo;k<=hi;k++) splitSel.add(k);
+  updateSplitSelStyles(); updateSplitInfo();
+}
+function updateSplitSelStyles(){
+  splitCells.forEach((el,i)=>{ if(el) el.classList.toggle("sel", splitSel.has(i)); });
+}
+function updateSplitInfo(){
+  const total = splitPages.length;
+  const segCount = splitSegments().length;
+  document.getElementById("split-info").textContent =
+    `총 ${total}쪽 · 선택 ${splitSel.size}쪽` + (splitCuts.size ? ` · ✂ ${segCount}조각` : "");
+  document.getElementById("btn-split-extract").disabled = splitSel.size === 0;
+  document.getElementById("btn-split-cut").disabled = splitCuts.size === 0;
+}
+// 드래그 종료 처리 (전역 한 번만)
+document.addEventListener("mouseup", ()=>{
+  if(!splitDragging) return;
+  if(!splitDragMoved){ // 클릭/탭 = 해당 페이지 토글 (터치 다중선택 지원)
+    if(splitSel.has(splitAnchor)) splitSel.delete(splitAnchor); else splitSel.add(splitAnchor);
+    updateSplitSelStyles(); updateSplitInfo();
+  }
+  splitDragging = false;
+});
+
+// 툴바 버튼
+document.getElementById("split-selectall").onclick = ()=>{ splitSel.clear(); splitPages.forEach((_,i)=>splitSel.add(i)); updateSplitSelStyles(); updateSplitInfo(); };
+document.getElementById("split-clear").onclick = ()=>{ splitSel.clear(); updateSplitSelStyles(); updateSplitInfo(); };
+document.getElementById("split-cutall").onclick = ()=>{ splitCuts.clear(); for(let i=0;i<splitPages.length-1;i++) splitCuts.add(i); renderSplitGallery(); };
+document.getElementById("split-cutreset").onclick = ()=>{ splitCuts.clear(); renderSplitGallery(); };
+
+// 선택한 페이지 추출 → PDF 1개
+document.getElementById("btn-split-extract").onclick = async ()=>{
+  if(!splitBytes || splitSel.size===0) return;
+  const btn = document.getElementById("btn-split-extract"); btn.disabled = true;
+  document.getElementById("results-split").innerHTML = "";
+  setStatus("status-split","추출 중...",""); setBar("bar-split", 20);
   const baseName = splitFile.name.replace(/\.pdf$/i,"");
   try{
-    const bytes = await splitFile.arrayBuffer();
-    const src = await PDFDocument.load(bytes, {ignoreEncryption:true});
-    const total = src.getPageCount();
-    if(mode === "range"){
-      const idxs = parseRanges(document.getElementById("split-range").value, total);
+    const src = await PDFDocument.load(splitBytes.slice(0), {ignoreEncryption:true});
+    const idxs = [...splitSel].sort((a,b)=>a-b).map(i=>splitPages[i].srcIndex);
+    const out = await PDFDocument.create();
+    const pages = await out.copyPages(src, idxs);
+    pages.forEach(p=>out.addPage(p));
+    const outBytes = await out.save();
+    setBar("bar-split",100);
+    const {url,filename} = download(outBytes, `${baseName}_추출.pdf`);
+    addResult("results-split", url, filename, `${idxs.length}쪽 · ${fmtSize(outBytes.length)}`);
+    setStatus("status-split", `완료! ${idxs.length}쪽 추출`, "ok");
+  }catch(e){ console.error(e); setStatus("status-split","오류: "+e.message,"err"); }
+  finally{ setBar("bar-split", null); btn.disabled = false; }
+};
+
+// 가위로 자른 대로 분할 → 구간별 PDF 여러 개
+document.getElementById("btn-split-cut").onclick = async ()=>{
+  if(!splitBytes || splitCuts.size===0) return;
+  const btn = document.getElementById("btn-split-cut"); btn.disabled = true;
+  document.getElementById("results-split").innerHTML = "";
+  setStatus("status-split","분할 중...",""); setBar("bar-split", 10);
+  const baseName = splitFile.name.replace(/\.pdf$/i,"");
+  try{
+    const src = await PDFDocument.load(splitBytes.slice(0), {ignoreEncryption:true});
+    const segs = splitSegments();
+    const pad = String(segs.length).length;
+    const items = [];
+    for(let s=0;s<segs.length;s++){
+      const {start,end} = segs[s];
+      const idxs = [];
+      for(let k=start;k<=end;k++) idxs.push(splitPages[k].srcIndex);
       const out = await PDFDocument.create();
       const pages = await out.copyPages(src, idxs);
       pages.forEach(p=>out.addPage(p));
       const outBytes = await out.save();
-      setBar("bar-split",100);
-      const {url,filename} = download(outBytes, `${baseName}_추출.pdf`);
-      addResult("results-split", url, filename, `${idxs.length}페이지 · ${fmtSize(outBytes.length)}`);
-      setStatus("status-split", `완료! ${idxs.length}개 페이지 추출`, "ok");
-    }else{
-      const items = [];
-      for(let i=0;i<total;i++){
-        const out = await PDFDocument.create();
-        const [pg] = await out.copyPages(src,[i]);
-        out.addPage(pg);
-        const outBytes = await out.save();
-        const num = String(i+1).padStart(String(total).length,"0");
-        const filename = `${baseName}_${num}.pdf`;
-        items.push({filename, bytes: outBytes});
-        linkResult("results-split", outBytes, filename);
-        setBar("bar-split", Math.round((i+1)/total*100));
-      }
-      addZipButton("results-split", items, `${baseName}_분할.zip`);
-      setStatus("status-split", `완료! ${total}개 낱장으로 분리 — 아래에서 하나씩 저장하거나 ZIP으로 한 번에 받으세요`, "ok");
+      const filename = `${baseName}_${String(s+1).padStart(pad,"0")}.pdf`;
+      items.push({filename, bytes: outBytes});
+      linkResult("results-split", outBytes, filename, "application/pdf", `${start+1}~${end+1}쪽 · ${fmtSize(outBytes.length)}`);
+      setBar("bar-split", 10 + Math.round((s+1)/segs.length*88));
     }
+    if(items.length > 1) addZipButton("results-split", items, `${baseName}_분할.zip`);
+    setStatus("status-split", `완료! ${segs.length}조각으로 분할 — 아래에서 하나씩 저장하거나 ZIP으로 받으세요`, "ok");
   }catch(e){ console.error(e); setStatus("status-split","오류: "+e.message,"err"); }
   finally{ setBar("bar-split", null); btn.disabled = false; }
 };
