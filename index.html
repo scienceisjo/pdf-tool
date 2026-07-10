@@ -22,19 +22,22 @@
   }
   header{
     background:linear-gradient(135deg,#3b6fe0,#5b8def); color:#fff;
-    padding:26px 20px; text-align:center;
+    padding:26px 20px; text-align:center; position:relative;
   }
   header h1{margin:0; font-size:26px; letter-spacing:-.5px}
   header p{margin:6px 0 0; opacity:.9; font-size:14px}
   .wrap{max-width:880px; margin:0 auto; padding:20px}
   .tabs{display:flex; gap:7px; margin:20px 0 16px; flex-wrap:wrap}
   .tab{
-    flex:1; min-width:96px; padding:10px 6px; border:1px solid var(--line);
+    flex:1 1 auto; min-width:84px; padding:10px 8px; border:1px solid var(--line);
     background:var(--card); border-radius:12px; cursor:pointer; text-align:center;
-    font-size:13.5px; font-weight:600; color:var(--sub); transition:.15s; white-space:nowrap;
+    font-size:13.5px; font-weight:600; color:var(--sub); transition:.15s;
+    white-space:normal; word-break:keep-all; line-height:1.25;
   }
   .tab:hover{border-color:var(--brand)}
   .tab.active{background:var(--brand); color:#fff; border-color:var(--brand)}
+  @media(max-width:520px){ .tab{font-size:12.5px; min-width:76px; padding:9px 6px} }
+  :focus-visible{outline:2px solid var(--brand); outline-offset:2px}
   .panel{display:none; background:var(--card); border:1px solid var(--line);
     border-radius:16px; padding:22px}
   .panel.active{display:block}
@@ -53,19 +56,22 @@
     display:flex; align-items:center; gap:10px; padding:10px 12px;
     border:1px solid var(--line); border-radius:10px; background:#fafbff;
   }
-  .item .name{flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .item .name{flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .item .meta{color:var(--sub); font-size:12px; white-space:nowrap}
   .item button{
-    border:none; background:#eef1f6; color:var(--sub); width:28px; height:28px;
-    border-radius:7px; cursor:pointer; font-size:15px; line-height:1;
+    border:none; background:#eef1f6; color:var(--sub); width:36px; height:36px;
+    border-radius:7px; cursor:pointer; font-size:16px; line-height:1; flex:none;
   }
+  @media(max-width:520px){ .item button{width:40px; height:40px} }
   .item button:hover{background:#e0e4ea; color:var(--ink)}
   .move{font-weight:700}
   label.f{display:block; font-size:14px; font-weight:600; margin:14px 0 6px}
-  input[type=text],select,textarea{
+  input[type=text],input[type=number],select,textarea{
     width:100%; padding:11px 12px; border:1px solid var(--line);
     border-radius:10px; font-size:14px; font-family:inherit; background:#fff;
   }
+  /* iOS Safari는 16px 미만 입력에 포커스하면 화면을 확대하므로 모바일에선 16px */
+  @media(max-width:768px){ input[type=text],input[type=number],select,textarea{font-size:16px} }
   textarea{resize:vertical; min-height:220px; line-height:1.6}
   .hint{color:var(--sub); font-size:12.5px; margin-top:5px}
   .radios{display:flex; flex-direction:column; gap:8px; margin-top:6px}
@@ -85,7 +91,7 @@
   .btn:disabled{background:#b8c4de; cursor:not-allowed}
   .btn.zip{background:#0d9488; margin-top:10px}
   .btn.zip:hover{background:#0f766e}
-  .btn.small{width:auto; padding:10px 18px; font-size:14px; margin-top:10px}
+  .btn.small{width:auto; padding:10px 18px; font-size:14px; margin-top:10px; white-space:nowrap}
   .status{margin-top:16px; font-size:14px; min-height:20px}
   .status.ok{color:var(--ok)} .status.err{color:var(--warn)}
   .bar{height:8px; background:#e5e7eb; border-radius:99px; overflow:hidden; margin-top:10px; display:none}
@@ -97,18 +103,21 @@
     background:#f0fdf4; border-radius:10px; color:#166534; font-weight:600; font-size:14px;
   }
   .results a:hover{background:#dcfce7}
-  .results a .dl{font-size:12px; opacity:.8}
+  .results a span:first-child{flex:1; min-width:0; overflow-wrap:anywhere; word-break:break-word}
+  .results a .dl{flex:none; white-space:nowrap; font-size:12px; opacity:.8}
+  .savenote{background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px;
+    padding:9px 12px; font-size:12.5px; margin-bottom:8px}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   @media(max-width:520px){.grid2{grid-template-columns:1fr}}
   /* 페이지 정리 썸네일 */
-  .thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:16px}
+  .thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:16px}
   .thumb{border:1px solid var(--line); border-radius:10px; padding:8px; background:#fff; text-align:center}
   .thumb.deleted{opacity:.35}
   .thumb .imgbox{height:150px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; border-radius:6px}
   .thumb img{max-width:132px; max-height:142px; border:1px solid #eee; transition:transform .2s; background:#fff}
   .thumb .num{font-size:12px; color:var(--sub); margin:5px 0 4px}
-  .thumb .ctrl{display:flex; justify-content:center; gap:4px}
-  .thumb .ctrl button{border:none; background:#eef1f6; border-radius:6px; min-width:26px; height:26px; cursor:pointer; font-size:13px; line-height:1}
+  .thumb .ctrl{display:flex; justify-content:center; gap:6px}
+  .thumb .ctrl button{border:none; background:#eef1f6; border-radius:8px; min-width:40px; height:40px; cursor:pointer; font-size:16px; line-height:1}
   .thumb .ctrl button:hover{background:#dbe3f0}
   .imgprev{width:52px; height:52px; object-fit:cover; border-radius:6px; border:1px solid var(--line); background:#fff}
   /* 분할 갤러리 */
@@ -121,26 +130,64 @@
   .sgallery{display:flex; flex-wrap:wrap; gap:0; margin-top:12px; user-select:none}
   .scell{display:flex; align-items:stretch}
   .spage{width:104px; padding:6px; border:2px solid var(--line); border-radius:9px; background:#fff;
-    text-align:center; cursor:pointer; transition:border-color .1s, background .1s}
+    text-align:center; cursor:pointer; transition:border-color .1s, background .1s; touch-action:none}
   .spage .simgbox{height:120px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8fafc; border-radius:5px}
   .spage img{max-width:90px; max-height:112px; border:1px solid #eee; background:#fff; pointer-events:none}
   .spage .snum{font-size:11.5px; color:var(--sub); margin-top:4px}
   .spage.sel{border-color:var(--brand); background:#eaf1ff}
   .spage.sel .snum{color:var(--brand); font-weight:700}
   /* 페이지 사이 가위 영역 */
-  .scut{width:26px; display:flex; align-items:center; justify-content:center; position:relative}
-  .scut button{border:none; background:transparent; cursor:pointer; font-size:15px; line-height:1;
-    color:#c0c6d0; padding:4px 2px; border-radius:6px; transition:.1s}
-  .scut button:hover{color:var(--warn); background:#fef2f2; transform:scale(1.25)}
-  .scut.cut button{color:var(--warn)}
+  .scut{width:34px; display:flex; align-items:center; justify-content:center; position:relative}
+  .scut button{border:none; background:#f1f5f9; cursor:pointer; font-size:16px; line-height:1;
+    color:#64748b; padding:9px 5px; border-radius:8px; transition:.1s}
+  .scut button:hover{color:var(--warn); background:#fee2e2}
+  .scut.cut button{color:#fff; background:var(--warn)}
   .scut.cut::before{content:""; position:absolute; top:4px; bottom:4px; left:50%; width:0;
     border-left:2px dashed var(--warn)}
+  /* 설명서 버튼 (헤더) */
+  .help-btn{position:absolute; top:18px; right:18px; background:rgba(255,255,255,.2);
+    border:1px solid rgba(255,255,255,.55); color:#fff; padding:8px 14px; border-radius:999px;
+    font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit}
+  .help-btn:hover{background:rgba(255,255,255,.32)}
+  @media(max-width:520px){ .help-btn{position:static; display:inline-block; margin-top:12px} }
+  /* 설명서 모달 */
+  .modal-back{position:fixed; inset:0; background:rgba(15,23,42,.55); display:none;
+    align-items:flex-start; justify-content:center; padding:24px 12px; z-index:50; overflow-y:auto}
+  .modal-back.open{display:flex}
+  .modal{background:#fff; border-radius:18px; max-width:760px; width:100%; margin:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:18px 22px; background:linear-gradient(135deg,#3b6fe0,#5b8def); color:#fff; position:sticky; top:0}
+  .modal-head h2{margin:0; font-size:19px; color:#fff}
+  .modal-close{background:rgba(255,255,255,.2); border:none; color:#fff; width:34px; height:34px;
+    border-radius:9px; font-size:18px; cursor:pointer; line-height:1; flex:none}
+  .modal-close:hover{background:rgba(255,255,255,.35)}
+  .modal-body{padding:18px 22px 26px}
+  .man-intro{font-size:13.5px; color:var(--sub); margin:0 0 14px}
+  .man-item{border:1px solid var(--line); border-radius:12px; margin-bottom:10px; overflow:hidden}
+  .man-q{width:100%; text-align:left; background:#f8fafc; border:none; padding:14px 16px;
+    font-size:15.5px; font-weight:700; color:var(--ink); cursor:pointer; font-family:inherit;
+    display:flex; justify-content:space-between; align-items:center; gap:10px}
+  .man-q:hover{background:#eef3ff}
+  .man-q .arw{transition:transform .2s; color:var(--sub); font-size:13px}
+  .man-item.open .man-q .arw{transform:rotate(90deg)}
+  .man-a{display:none; padding:6px 18px 16px}
+  .man-item.open .man-a{display:block}
+  .man-a .one{color:var(--brand); font-weight:600; font-size:13.5px; margin:8px 0 10px}
+  .man-a ol{margin:0 0 12px; padding-left:20px}
+  .man-a ol li{margin:5px 0; font-size:14px}
+  .man-a .tips{background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 14px}
+  .man-a .tips li{font-size:13px; color:#166534; margin:4px 0; list-style:none; padding-left:18px; position:relative}
+  .man-a .tips li::before{content:"💡"; position:absolute; left:0; font-size:11px}
+  .man-a .tips b{color:#14532d}
   footer{text-align:center; color:var(--sub); font-size:12.5px; padding:24px; line-height:1.9}
   footer .credit{font-weight:600; color:#4b5563}
+  footer .footlink{background:none; border:none; color:var(--brand); font:inherit; cursor:pointer; text-decoration:underline; padding:0}
 </style>
 </head>
 <body>
 <header>
+  <button class="help-btn" id="open-manual">📖 설명서</button>
   <h1>📄 PDF 만능 도구</h1>
   <p>병합 · 분할 · 압축 · 변환 · 정리 · 쪽번호 · 워터마크 · 모아찍기 · OCR — 인터넷 없이, 무제한 무료</p>
 </header>
@@ -198,7 +245,7 @@
         </span>
       </div>
       <div class="hint" id="split-help">
-        · 페이지를 <b>클릭</b> 또는 <b>드래그</b>하면 범위가 선택돼요(파란색). · 페이지 사이 <b>✂</b>를 누르면 그 자리에서 잘려요(색깔 구간으로 나뉨).
+        · 페이지를 <b>클릭(터치는 톡 누르기)</b>하면 선택돼요. 마우스로 <b>드래그</b>하면 여러 쪽이 한꺼번에 선택돼요(파란색). · 페이지 사이 <b>✂</b>를 누르면 그 자리에서 잘려요(색깔 구간으로 나뉨).
       </div>
       <div class="sgallery" id="split-gallery"></div>
     </div>
@@ -382,7 +429,7 @@
       <div class="grid2">
         <div>
           <label class="f">시작 번호</label>
-          <input type="text" id="num-start" value="1">
+          <input type="number" id="num-start" value="1" min="1" inputmode="numeric">
         </div>
         <div>
           <label class="f">글자 크기</label>
@@ -594,9 +641,24 @@
 </div>
 
 <footer>
+  <button class="footlink" id="open-manual2">📖 사용 설명서 보기</button><br>
   모든 처리는 이 컴퓨터 안에서만 이루어집니다 · 파일이 외부로 전송되지 않아요 🔒<br>
   <span class="credit">제작: 해누리중학교 조승재</span> · <a href="mailto:chuseonjae@outlook.kr" style="color:var(--brand)">chuseonjae@outlook.kr</a>
 </footer>
+
+<!-- 설명서 모달 -->
+<div class="modal-back" id="manual-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="사용 설명서">
+    <div class="modal-head">
+      <h2>📖 사용 설명서</h2>
+      <button class="modal-close" id="close-manual" aria-label="설명서 닫기">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="man-intro">각 기능의 제목을 누르면 사용법이 펼쳐져요. 이 도구의 모든 작업은 인터넷 없이 이 컴퓨터 안에서만 처리됩니다. 🔒</p>
+      <div id="manual-list"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 const { PDFDocument, StandardFonts, degrees, rgb } = PDFLib;
@@ -613,6 +675,21 @@ function setStatus(id, msg, cls){
   el.textContent = msg || "";
   el.className = "status" + (cls ? " " + cls : "");
 }
+// 기술적 영어 예외를 사용자 친화적 한국어로 변환
+function friendlyError(e){
+  const m = ((e && e.message) || String(e)).toLowerCase();
+  if(/encrypt|password/.test(m)) return "암호가 걸린 PDF라 열 수 없어요. 암호를 먼저 해제한 뒤 다시 시도해 주세요.";
+  if(/invalid|parse|xref|structure|corrupt|not a pdf/.test(m)) return "파일이 손상됐거나 형식이 특이해서 열 수 없어요. 다른 PDF로 시도해 주세요.";
+  if(/memory|allocation|out of/.test(m)) return "파일이 너무 커서 처리 중 메모리가 부족했어요. 페이지 수를 줄이거나 나눠서 시도해 주세요.";
+  return "처리 중 문제가 생겼어요. 파일을 확인하고 다시 시도해 주세요.";
+}
+// 쪽수 많은/큰 파일은 미리보기가 오래 걸려 멈춘 것처럼 보이므로 미리 확인
+function confirmHeavy(total, size){
+  if(total > 60 || size > 30*1024*1024){
+    return confirm(`이 파일은 ${total}쪽(${fmtSize(size)})이라 미리보기를 만드는 데 시간이 걸릴 수 있어요.\n계속할까요?`);
+  }
+  return true;
+}
 function setBar(id, pct){
   const bar = document.getElementById(id);
   bar.style.display = pct == null ? "none" : "block";
@@ -628,6 +705,14 @@ function download(data, filename, mime){
 }
 function addResult(containerId, url, filename, sizeLabel){
   const box = document.getElementById(containerId);
+  if(!box.querySelector(".savenote")){
+    const note = document.createElement("div");
+    note.className = "savenote";
+    note.textContent = "📁 결과 파일은 브라우저의 '다운로드' 폴더에 저장돼요. 자동으로 안 받아졌으면 아래 초록 버튼을 누르세요.";
+    box.appendChild(note);
+    // 결과가 화면 밖에 생겨 '아무 일 없는 것처럼' 보이지 않게 스크롤
+    setTimeout(()=>box.scrollIntoView({behavior:"smooth", block:"nearest"}), 50);
+  }
   const a = document.createElement("a");
   a.href = url; a.download = filename;
   a.innerHTML = `<span>⬇ ${filename}</span><span class="dl">${sizeLabel||"저장"}</span>`;
@@ -654,17 +739,34 @@ function addZipButton(containerId, items, zipName){
 }
 const isPdf = f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
 const isImg = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|bmp|gif)$/i.test(f.name);
+function unsupportedMsg(flt){
+  const kind = flt===isImg ? "이미지(JPG·PNG 등)" : "PDF";
+  let msg = "이 기능에서 열 수 없는 형식이에요.\n\n· 여기엔 "+kind+" 파일만 넣을 수 있어요.";
+  if(flt===isImg) msg += "\n· 아이폰 사진(HEIC)은 지원되지 않아요 — 사진 앱에서 'JPEG로 저장' 후 넣어주세요.";
+  return msg;
+}
 function setupDrop(dropId, inputId, onFiles, filter){
   const drop = document.getElementById(dropId);
   const input = document.getElementById(inputId);
   const flt = filter || isPdf;
+  // 접근성: 드롭존을 키보드로도 조작
+  drop.setAttribute("tabindex","0");
+  drop.setAttribute("role","button");
+  drop.setAttribute("aria-label","파일 선택 또는 끌어다 놓기");
   drop.addEventListener("click", ()=>input.click());
-  input.addEventListener("change", ()=>{ const fs=[...input.files].filter(flt); if(fs.length) onFiles(fs); input.value=""; });
+  drop.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); input.click(); } });
+  input.addEventListener("change", ()=>{
+    const all=[...input.files], fs=all.filter(flt);
+    if(fs.length) onFiles(fs);
+    else if(all.length) alert(unsupportedMsg(flt));
+    input.value="";
+  });
   ["dragover","dragenter"].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); drop.classList.add("over");}));
   ["dragleave","drop"].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); drop.classList.remove("over");}));
   drop.addEventListener("drop", ev=>{
-    const files = [...ev.dataTransfer.files].filter(flt);
+    const all=[...ev.dataTransfer.files], files=all.filter(flt);
     if(files.length) onFiles(files);
+    else if(all.length) alert(unsupportedMsg(flt));
   });
 }
 function parseRanges(str, max){
@@ -710,13 +812,22 @@ function singlePdfPicker(key, onLoaded){
 }
 
 // ---------- 탭 전환 ----------
+const tabsWrap = document.querySelector(".tabs");
+if(tabsWrap) tabsWrap.setAttribute("role","tablist");
 document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  tab.setAttribute("role","tab");
+  tab.setAttribute("tabindex","0");
+  tab.setAttribute("aria-selected", tab.classList.contains("active") ? "true":"false");
+  const activate = ()=>{
+    document.querySelectorAll(".tab").forEach(t=>{ t.classList.remove("active"); t.setAttribute("aria-selected","false"); });
     document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
-    tab.classList.add("active");
+    tab.classList.add("active"); tab.setAttribute("aria-selected","true");
     document.getElementById("panel-"+tab.dataset.tab).classList.add("active");
-  });
+    // 모바일: 탭이 여러 줄이라 내용이 밀리므로 해당 패널을 보이게 스크롤
+    document.getElementById("panel-"+tab.dataset.tab).scrollIntoView({behavior:"smooth", block:"nearest"});
+  };
+  tab.addEventListener("click", activate);
+  tab.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); activate(); } });
 });
 
 // ================= 병합 =================
@@ -745,6 +856,12 @@ setupDrop("drop-merge","file-merge", files=>{ mergeFiles.push(...files); renderM
 function renderMerge(){
   const list = document.getElementById("list-merge");
   list.innerHTML = "";
+  if(mergeFiles.length >= 2){
+    const clr = document.createElement("button");
+    clr.className = "minibtn"; clr.style.alignSelf = "flex-start"; clr.textContent = "🗑 모두 지우기";
+    clr.onclick = ()=>{ mergeFiles=[]; renderMerge(); document.getElementById("results-merge").innerHTML=""; setStatus("status-merge",""); };
+    list.appendChild(clr);
+  }
   mergeFiles.forEach((f,i)=>{
     const row = document.createElement("div");
     row.className = "item";
@@ -762,7 +879,9 @@ function renderMerge(){
     row.querySelector('[data-a=del]').onclick = ()=>{ mergeFiles.splice(i,1); renderMerge(); };
     list.appendChild(row);
   });
-  document.getElementById("btn-merge").disabled = mergeFiles.length < 1;
+  document.getElementById("btn-merge").disabled = mergeFiles.length < 2;
+  const mh = mergeFiles.length===1 ? "병합하려면 파일을 1개 더 올려주세요. (2개 이상 필요)" : "";
+  setStatus("status-merge", mh, mh ? "err" : "");
 }
 document.getElementById("btn-merge").onclick = async ()=>{
   if(mergeFiles.length < 2){ setStatus("status-merge","병합하려면 2개 이상의 파일이 필요해요.","err"); return; }
@@ -783,7 +902,7 @@ document.getElementById("btn-merge").onclick = async ()=>{
     const {url, filename} = download(bytes, "병합된_PDF.pdf");
     addResult("results-merge", url, filename, fmtSize(bytes.length));
     setStatus("status-merge", `완료! ${mergeFiles.length}개 파일 → ${out.getPageCount()}페이지`, "ok");
-  }catch(e){ console.error(e); setStatus("status-merge","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-merge",friendlyError(e),"err"); }
   finally{ setBar("bar-merge", null); btn.disabled = false; }
 };
 
@@ -820,6 +939,7 @@ async function loadSplit(file){
     splitBytes = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({data: splitBytes.slice(0)}).promise;
     const total = pdf.numPages;
+    if(!confirmHeavy(total, file.size)){ setBar("bar-split", null); setStatus("status-split","취소했어요. 다시 파일을 올리면 시작해요.",""); splitBytes=null; document.getElementById("list-split").innerHTML=""; return; }
     for(let i=1;i<=total;i++){
       const page = await pdf.getPage(i);
       const vp1 = page.getViewport({scale:1});
@@ -838,7 +958,7 @@ async function loadSplit(file){
     document.getElementById("split-visual").style.display = "block";
     renderSplitGallery();
     setStatus("status-split", `${total}쪽 불러왔어요. 드래그로 범위를 고르거나 ✂로 잘라보세요.`, "ok");
-  }catch(e){ console.error(e); setBar("bar-split", null); setStatus("status-split","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setBar("bar-split", null); setStatus("status-split",friendlyError(e),"err"); }
 }
 
 // 가위 표시로 나뉜 구간들 → [{start,end}...] (inclusive, 0-based)
@@ -863,11 +983,10 @@ function renderSplitGallery(){
     pg.className = "spage" + (splitSel.has(i) ? " sel":"");
     const segColor = SEG_COLORS[ (showSeg ? segIndexOfPage(i,segs) : 0) % SEG_COLORS.length ];
     pg.innerHTML = `
-      <div class="simgbox"><img src="${p.thumb}"></div>
+      <div class="simgbox"><img src="${p.thumb}" alt="${i+1}쪽 미리보기"></div>
       <div class="snum">${i+1}쪽</div>
       <div class="sseg" style="height:4px;border-radius:3px;margin-top:4px;background:${showSeg?segColor:'transparent'}"></div>`;
-    pg.onmousedown = (e)=>{ e.preventDefault(); splitDragging=true; splitAnchor=i; splitDragMoved=false; };
-    pg.onmouseenter = ()=>{ if(splitDragging){ splitDragMoved=true; selectSplitRange(splitAnchor, i); } };
+    pg.addEventListener("pointerdown", (e)=>{ e.preventDefault(); splitDragging=true; splitAnchor=i; splitDragMoved=false; });
     cell.appendChild(pg);
     splitCells[i] = pg;
     // 페이지 사이 가위
@@ -904,10 +1023,18 @@ function updateSplitInfo(){
   document.getElementById("btn-split-extract").disabled = splitSel.size === 0;
   document.getElementById("btn-split-cut").disabled = splitCuts.size === 0;
 }
-// 드래그 종료 처리 (전역 한 번만)
-document.addEventListener("mouseup", ()=>{
+// 드래그(마우스·터치 공용) 이동: 포인터 밑의 페이지를 찾아 범위 선택
+document.addEventListener("pointermove", (e)=>{
   if(!splitDragging) return;
-  if(!splitDragMoved){ // 클릭/탭 = 해당 페이지 토글 (터치 다중선택 지원)
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest ? el.closest(".spage") : null;
+  const j = cell ? splitCells.indexOf(cell) : -1;
+  if(j >= 0 && j !== splitAnchor){ splitDragMoved = true; selectSplitRange(splitAnchor, j); }
+});
+// 드래그 종료 (전역 한 번만) — 안 움직였으면 탭/클릭으로 간주해 토글
+document.addEventListener("pointerup", ()=>{
+  if(!splitDragging) return;
+  if(!splitDragMoved){
     if(splitSel.has(splitAnchor)) splitSel.delete(splitAnchor); else splitSel.add(splitAnchor);
     updateSplitSelStyles(); updateSplitInfo();
   }
@@ -938,7 +1065,7 @@ document.getElementById("btn-split-extract").onclick = async ()=>{
     const {url,filename} = download(outBytes, `${baseName}_추출.pdf`);
     addResult("results-split", url, filename, `${idxs.length}쪽 · ${fmtSize(outBytes.length)}`);
     setStatus("status-split", `완료! ${idxs.length}쪽 추출`, "ok");
-  }catch(e){ console.error(e); setStatus("status-split","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-split",friendlyError(e),"err"); }
   finally{ setBar("bar-split", null); btn.disabled = false; }
 };
 
@@ -969,7 +1096,7 @@ document.getElementById("btn-split-cut").onclick = async ()=>{
     }
     if(items.length > 1) addZipButton("results-split", items, `${baseName}_분할.zip`);
     setStatus("status-split", `완료! ${segs.length}조각으로 분할 — 아래에서 하나씩 저장하거나 ZIP으로 받으세요`, "ok");
-  }catch(e){ console.error(e); setStatus("status-split","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-split",friendlyError(e),"err"); }
   finally{ setBar("bar-split", null); btn.disabled = false; }
 };
 
@@ -1051,7 +1178,7 @@ document.getElementById("btn-compress").onclick = async ()=>{
     }else{
       setStatus("status-compress", `완료! ${fmtSize(origSize)} → ${fmtSize(newSize)} — 이 파일은 더 줄지 않았어요. '강하게'를 선택해 보세요.`, "ok");
     }
-  }catch(e){ console.error(e); setStatus("status-compress","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-compress",friendlyError(e),"err"); }
   finally{ setBar("bar-compress", null); btn.disabled = false; }
 };
 
@@ -1061,6 +1188,12 @@ setupDrop("drop-img2pdf","file-img2pdf", files=>{ imgFiles.push(...files); rende
 function renderImg2Pdf(){
   const list = document.getElementById("list-img2pdf");
   list.innerHTML = "";
+  if(imgFiles.length >= 2){
+    const clr = document.createElement("button");
+    clr.className = "minibtn"; clr.style.alignSelf = "flex-start"; clr.textContent = "🗑 모두 지우기";
+    clr.onclick = ()=>{ imgFiles=[]; renderImg2Pdf(); document.getElementById("results-img2pdf").innerHTML=""; setStatus("status-img2pdf",""); };
+    list.appendChild(clr);
+  }
   imgFiles.forEach((f,i)=>{
     const row = document.createElement("div");
     row.className = "item";
@@ -1145,7 +1278,7 @@ document.getElementById("btn-img2pdf").onclick = async ()=>{
     const {url,filename} = download(bytes, "이미지_변환.pdf");
     addResult("results-img2pdf", url, filename, `${imgFiles.length}페이지 · ${fmtSize(bytes.length)}`);
     setStatus("status-img2pdf", `완료! 이미지 ${imgFiles.length}장 → PDF ${imgFiles.length}페이지`, "ok");
-  }catch(e){ console.error(e); setStatus("status-img2pdf","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-img2pdf",friendlyError(e),"err"); }
   finally{ setBar("bar-img2pdf", null); btn.disabled = false; }
 };
 
@@ -1204,7 +1337,7 @@ document.getElementById("btn-pdf2img").onclick = async ()=>{
     if(items.length > 1) addZipButton("results-pdf2img", items, `${baseName}_이미지.zip`);
     else if(items.length === 1) download(items[0].bytes, items[0].filename, "image/"+format);
     setStatus("status-pdf2img", `완료! ${idxs.length}장 변환 — 아래에서 하나씩 저장하거나 ZIP으로 한 번에 받으세요`, "ok");
-  }catch(e){ console.error(e); setStatus("status-pdf2img","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-pdf2img",friendlyError(e),"err"); }
   finally{ setBar("bar-pdf2img", null); btn.disabled = false; }
 };
 
@@ -1232,6 +1365,7 @@ async function loadOrganize(file){
     orgBytes = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({data: orgBytes.slice(0)}).promise;
     const total = pdf.numPages;
+    if(!confirmHeavy(total, file.size)){ setBar("bar-organize", null); setStatus("status-organize","취소했어요. 다시 파일을 올리면 시작해요.",""); orgBytes=null; document.getElementById("list-organize").innerHTML=""; return; }
     for(let i=1;i<=total;i++){
       const page = await pdf.getPage(i);
       const vp1 = page.getViewport({scale:1});
@@ -1253,7 +1387,7 @@ async function loadOrganize(file){
     renderOrgThumbs();
   }catch(e){
     console.error(e); setBar("bar-organize", null);
-    setStatus("status-organize","오류: "+e.message,"err");
+    setStatus("status-organize",friendlyError(e),"err");
   }
 }
 function renderOrgThumbs(){
@@ -1301,7 +1435,7 @@ document.getElementById("btn-organize").onclick = async ()=>{
     addResult("results-organize", url, filename, `${keep.length}페이지 · ${fmtSize(outBytes.length)}`);
     const delCount = orgPages.length - keep.length;
     setStatus("status-organize", `완료! ${keep.length}페이지 저장${delCount?` (${delCount}페이지 삭제됨)`:""}`, "ok");
-  }catch(e){ console.error(e); setStatus("status-organize","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-organize",friendlyError(e),"err"); }
   finally{ setBar("bar-organize", null); btn.disabled = false; }
 };
 
@@ -1351,7 +1485,7 @@ document.getElementById("btn-number").onclick = async ()=>{
     const {url,filename} = download(outBytes, `${baseName}_쪽번호.pdf`);
     addResult("results-number", url, filename, fmtSize(outBytes.length));
     setStatus("status-number", `완료! ${numberedCount}개 페이지에 번호를 넣었어요`, "ok");
-  }catch(e){ console.error(e); setStatus("status-number","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-number",friendlyError(e),"err"); }
   finally{ setBar("bar-number", null); btn.disabled = false; }
 };
 
@@ -1459,7 +1593,7 @@ document.getElementById("btn-watermark").onclick = async ()=>{
     const {url,filename} = download(outBytes, `${baseName}_워터마크.pdf`);
     addResult("results-watermark", url, filename, fmtSize(outBytes.length));
     setStatus("status-watermark", `완료! ${pages.length}개 페이지에 워터마크를 넣었어요`, "ok");
-  }catch(e){ console.error(e); setStatus("status-watermark","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-watermark",friendlyError(e),"err"); }
   finally{ setBar("bar-watermark", null); btn.disabled = false; }
 };
 
@@ -1551,7 +1685,7 @@ document.getElementById("btn-nup").onclick = async ()=>{
     const {url,filename} = download(outBytes, `${baseName}_${suffix}.pdf`);
     addResult("results-nup", url, filename, `${out.getPageCount()}장 · ${fmtSize(outBytes.length)}`);
     setStatus("status-nup", `완료! ${total}쪽 → ${out.getPageCount()}장. ${NUP_HINTS[mode]}`, "ok");
-  }catch(e){ console.error(e); setStatus("status-nup","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setStatus("status-nup",friendlyError(e),"err"); }
   finally{ setBar("bar-nup", null); btn.disabled = false; }
 };
 
@@ -1598,7 +1732,7 @@ document.getElementById("btn-text").onclick = async ()=>{
     }else{
       setStatus("status-text", `완료! ${total}쪽에서 글자 ${charCount.toLocaleString()}자 추출`, "ok");
     }
-  }catch(e){ console.error(e); setBar("bar-text", null); setStatus("status-text","오류: "+e.message,"err"); }
+  }catch(e){ console.error(e); setBar("bar-text", null); setStatus("status-text",friendlyError(e),"err"); }
   finally{ btn.disabled = false; }
 };
 document.getElementById("btn-text-copy").onclick = async ()=>{
@@ -1659,11 +1793,48 @@ async function fileToCanvas(file){
       im.onerror = ()=>rej(new Error(file.name+" 을(를) 열 수 없어요."));
       im.src = url;
     });
+    // OCR용: 초대형 사진은 축소(메모리·속도), 너무 작은 캡처는 확대(글자 높이 확보)
+    const long = Math.max(img.naturalWidth, img.naturalHeight);
+    let s = 1;
+    if(long > 3000) s = 3000/long;          // 상한
+    else if(long < 1400) s = Math.min(2, 1400/long);  // 하한(2배까지 확대)
     const c = document.createElement("canvas");
-    c.width = img.naturalWidth; c.height = img.naturalHeight;
-    c.getContext("2d").drawImage(img,0,0);
+    c.width = Math.max(1, Math.round(img.naturalWidth*s));
+    c.height = Math.max(1, Math.round(img.naturalHeight*s));
+    const ctx = c.getContext("2d");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, c.width, c.height);
     return c;
   }finally{ URL.revokeObjectURL(url); }
+}
+// OCR 전처리: 흰배경 합성(투명 PNG 대응) + 그레이스케일 + Otsu 이진화 + 흰 여백 테두리(가장자리 글자 잘림 방지)
+function preprocessForOcr(srcCanvas, border=24){
+  const w = srcCanvas.width, h = srcCanvas.height;
+  const d = srcCanvas.getContext("2d").getImageData(0,0,w,h).data;
+  const gray = new Uint8Array(w*h), hist = new Int32Array(256);
+  for(let i=0,p=0;i<d.length;i+=4,p++){
+    const a = d[i+3]/255;                        // 투명 영역은 흰 배경 위에 합성
+    const r = d[i]*a+255*(1-a), g = d[i+1]*a+255*(1-a), b = d[i+2]*a+255*(1-a);
+    const y = (0.299*r+0.587*g+0.114*b)|0; gray[p]=y; hist[y]++;
+  }
+  const total = w*h; let sum=0; for(let t=0;t<256;t++) sum+=t*hist[t];
+  let sumB=0, wB=0, maxVar=-1, thr=127;          // Otsu 임계값
+  for(let t=0;t<256;t++){
+    wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break;
+    sumB+=t*hist[t]; const mB=sumB/wB, mF=(sum-sumB)/wF;
+    const v=wB*wF*(mB-mF)*(mB-mF); if(v>maxVar){ maxVar=v; thr=t; }
+  }
+  const out = document.createElement("canvas");
+  out.width = w+border*2; out.height = h+border*2;
+  const octx = out.getContext("2d");
+  octx.fillStyle = "#fff"; octx.fillRect(0,0,out.width,out.height);
+  const im = octx.createImageData(w,h);
+  for(let p=0,i=0;p<gray.length;p++,i+=4){
+    const v = gray[p]>thr?255:0;
+    im.data[i]=im.data[i+1]=im.data[i+2]=v; im.data[i+3]=255;
+  }
+  octx.putImageData(im, border, border);
+  return out;
 }
 // 인식 엔진은 한 번 만들면 재사용 (언어를 바꾸면 다시 준비)
 let ocrWorker = null, ocrWorkerLang = null, ocrProgressCb = null;
@@ -1677,6 +1848,13 @@ async function getOcrWorker(lang){
     corePath: abs("lib/tesseract"),
     langPath: abs("lib/tesseract"),
     logger: m=>{ if(ocrProgressCb) ocrProgressCb(m); }
+  });
+  // 인식 정확도 향상: PSM 6(단일 텍스트 블록) — 시험지·학습지 등 한 단짜리 문서에서
+  // 자동(PSM 3)보다 훨씬 정확하고 줄 순서가 안 뒤섞임. DPI 힌트 + 한글 띄어쓰기 보존.
+  await ocrWorker.setParameters({
+    tessedit_pageseg_mode: "6",
+    preserve_interword_spaces: "1",
+    user_defined_dpi: "300",
   });
   ocrWorkerLang = lang;
   return ocrWorker;
@@ -1701,7 +1879,12 @@ document.getElementById("btn-ocr").onclick = async ()=>{
         label: (i+1)+"쪽",
         get: async ()=>{
           const page = await pdf.getPage(i+1);
-          const vp = page.getViewport({scale:2.5});
+          // 약 300 DPI로 렌더(pdf.js scale 1 = 72 DPI). 과대 이미지는 상한으로 캡
+          const base = page.getViewport({scale:1});
+          let scale = 300/72;
+          const maxSide = 4000;
+          scale = Math.min(scale, maxSide/Math.max(base.width, base.height));
+          const vp = page.getViewport({scale});
           const c = document.createElement("canvas");
           c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
           const ctx = c.getContext("2d");
@@ -1723,7 +1906,7 @@ document.getElementById("btn-ocr").onclick = async ()=>{
           setBar("bar-ocr", Math.round(((k + m.progress) / sources.length) * 100));
         }
       };
-      const canvas = await s.get();
+      const canvas = preprocessForOcr(await s.get());
       const {data} = await worker.recognize(canvas);
       const t = (data.text||"").trim();
       charCount += t.length;
@@ -1740,7 +1923,7 @@ document.getElementById("btn-ocr").onclick = async ()=>{
     }
   }catch(e){
     console.error(e); setBar("bar-ocr", null);
-    setStatus("status-ocr","오류: "+(e.message||e),"err");
+    setStatus("status-ocr", friendlyError(e), "err");
   }finally{ btn.disabled = false; }
 };
 document.getElementById("btn-ocr-copy").onclick = async ()=>{
@@ -1760,6 +1943,137 @@ document.getElementById("btn-ocr-save").onclick = ()=>{
   download(new Blob(["﻿"+t], {type:"text/plain;charset=utf-8"}), `${baseName}_OCR.txt`);
   setStatus("status-ocr","TXT 파일로 저장했어요!","ok");
 };
+
+// ================= 사용 설명서 =================
+const MANUAL = [
+  { title:"🔗 병합 — 여러 PDF를 하나로 합치기",
+    one:"흩어져 있는 여러 PDF를 한 개의 PDF로 이어 붙일 때 써요.",
+    steps:["위 상자를 클릭하거나, 합칠 PDF들을 상자로 끌어다 놓아요. (여러 개 한꺼번에 가능)",
+      "각 줄의 ▲ ▼ 버튼으로 순서를 정해요. 이 순서대로 합쳐져요.",
+      "빼고 싶은 파일은 그 줄의 ✕ 로 지워요.",
+      "'PDF 병합하기'를 누르면 '병합된_PDF.pdf'가 저장돼요."],
+    tips:["파일이 <b>2개 이상</b>이어야 병합돼요. 1개면 버튼이 꺼져 있어요.",
+      "각 파일 첫 페이지 미리보기가 함께 보여서 순서 정하기 쉬워요."] },
+  { title:"✂️ 분할 — PDF를 나누기",
+    one:"한 PDF에서 필요한 쪽만 빼거나, 여러 조각으로 잘라 나눌 때 써요.",
+    steps:["PDF 1개를 올리면 페이지 미리보기(썸네일)가 쭉 나와요.",
+      "<b>원하는 쪽만 빼내기</b> → 페이지를 클릭(터치는 톡 누르기)하거나 마우스로 드래그해 파란색으로 고른 뒤 '선택한 페이지 추출하기'.",
+      "<b>여러 조각으로 자르기</b> → 페이지 사이 '✂'를 눌러요. 자른 자리마다 색깔 구간으로 나뉘고, '가위로 자른 대로 분할하기'를 눌러요.",
+      "조각이 여러 개면 하나씩 저장하거나 '📦 ZIP으로 한 번에 저장'으로 받아요."],
+    tips:["'✂ 모두 낱장'은 모든 페이지를 한 장씩 낱개로 나눠요. '가위 초기화'는 가위를 모두 지워요.",
+      "'추출'은 고른 쪽을 <b>1개 파일로</b>, '가위로 자르기'는 구간마다 <b>여러 개 파일로</b> 만들어요."] },
+  { title:"🗜️ 압축 — PDF 용량 줄이기",
+    one:"사진·스캔이 많아 무거운 PDF를 가볍게 만들어 이메일·업로드하기 좋게 해요.",
+    steps:["PDF 1개를 올려요.",
+      "'압축 강도'를 골라요: 강하게(용량 최소) / 보통(추천) / 약하게(화질 우선).",
+      "더 줄이고 잉크도 아끼려면 '흑백(회색조)으로 변환'에 체크해요.",
+      "'PDF 압축하기'를 누르면 '원래크기 → 줄어든크기' 안내와 함께 저장돼요."],
+    tips:["스캔본·사진이 많은 PDF에서 효과가 커요. 글자만 있는 PDF는 거의 안 줄어요.",
+      "잘 안 줄면 '강하게'로 다시 해 보세요. 색이 중요하면 흑백 체크는 하지 마세요."] },
+  { title:"🖼️ 이미지→PDF — 사진·그림을 PDF로",
+    one:"사진·그림(JPG·PNG 등) 여러 장을 한 개의 PDF로 묶을 때 써요.",
+    steps:["이미지들을 올려요. (여러 장 가능)",
+      "▲ ▼ 로 순서를 정하고, 필요 없는 건 ✕ 로 지워요.",
+      "'용지 크기'(A4 세로 추천/가로/이미지 그대로)와 '여백'을 골라요.",
+      "'PDF 만들기'를 누르면 '이미지_변환.pdf'가 저장돼요."],
+    tips:["이미지 1장이 PDF 1쪽이 돼요. 비율은 안 찌그러지고 가운데로 배치돼요.",
+      "아이폰 사진(HEIC)은 사진 앱에서 'JPEG로 저장' 후 넣어주세요."] },
+  { title:"📷 PDF→이미지 — PDF를 그림 파일로",
+    one:"PDF 각 페이지를 PNG·JPG 그림으로 저장해 발표·문서에 붙여넣을 때 써요.",
+    steps:["PDF 1개를 올려요.",
+      "형식(PNG 선명/JPG 가벼움)과 해상도(보통/고화질/초고화질)를 골라요.",
+      "일부만 바꾸려면 '변환할 페이지'에 예: 1-3, 5 처럼 적어요. 비우면 전체.",
+      "'이미지로 변환하기' → 여러 장이면 ZIP으로, 1장이면 바로 저장돼요."],
+    tips:["화면·발표용은 '고화질', 크게 인쇄할 거면 '초고화질'. 높을수록 파일이 커져요.",
+      "한글·워드엔 PNG가 깔끔하고, 용량 아끼려면 JPG를 쓰세요."] },
+  { title:"📑 페이지 정리 — 회전·삭제·순서 바꾸기",
+    one:"페이지를 미리 보며 돌리고, 지우고, 순서를 바꿔 새 PDF로 저장해요.",
+    steps:["PDF 1개를 올리면 페이지 미리보기가 나와요.",
+      "각 페이지 아래: ◀ 앞으로 · ▶ 뒤로 · ↻ 90° 회전 · ✕ 삭제.",
+      "잘못 지웠으면 그 페이지의 ↩ 로 되살려요.",
+      "'정리한 대로 저장하기' → '파일이름_정리.pdf'가 저장돼요."],
+    tips:["삭제한 페이지는 흐리게 보이고 저장 시 빠져요. 최소 1페이지는 남기세요.",
+      "거꾸로 스캔된 페이지는 ↻ 로 똑바로 돌린 뒤 저장하세요."] },
+  { title:"🔢 쪽번호 — 페이지 번호 매기기",
+    one:"학습지 묶음·자료집 모든 페이지에 쪽번호를 자동으로 찍어요.",
+    steps:["PDF 1개를 올려요.",
+      "'위치'(아래 가운데 추천 등)와 '모양'(1,2,3 / -1- / 1/10)을 골라요.",
+      "'시작 번호'와 '글자 크기'를 정해요.",
+      "표지에 번호를 빼려면 '첫 페이지(표지)에는 번호 표시 안 함'에 체크.",
+      "'쪽번호 넣기' → '파일이름_쪽번호.pdf'가 저장돼요."],
+    tips:["'1 / 10' 모양은 전체 쪽수도 함께 보여줘 자료집에 좋아요.",
+      "시작 번호를 바꾸면 앞 자료에 이어 5부터처럼 시작할 수 있어요."] },
+  { title:"💧 워터마크 — 배포용 글자·로고 넣기",
+    one:"모든 페이지에 '배포용' 같은 반투명 글자나 학교 로고·도장을 얹어요.",
+    steps:["PDF 1개를 올려요.",
+      "'글자' 또는 '이미지(로고·도장)'를 골라요.",
+      "[글자] 문구를 적고 크기·색·진하기·방향(대각선 추천)을 정해요.",
+      "[이미지] 로고를 고르고 크기·진하기를 정해요. (투명 배경 PNG 추천)",
+      "'워터마크 넣기' → '파일이름_워터마크.pdf'가 저장돼요."],
+    tips:["글자 워터마크는 한글·한자·기호 어떤 글자든 깨지지 않고 잘 나와요.",
+      "진하기를 '연하게'로 두면 내용을 안 가리고 은은하게 들어가요."] },
+  { title:"🖨️ 모아찍기 · 소책자",
+    one:"여러 쪽을 한 장에 모아 종이를 아끼거나, 접으면 책이 되는 소책자를 만들어요.",
+    steps:["PDF 1개를 올려요.",
+      "'2쪽 모아찍기' / '4쪽 모아찍기' / '소책자' 중에서 골라요.",
+      "아래에 나오는 인쇄 안내 문구를 읽어 두세요.",
+      "'만들기'를 눌러 저장한 뒤 인쇄해서 써요."],
+    tips:["'2쪽'은 A4 가로로, '4쪽'은 A4 세로로 인쇄해야 제대로 나와요.",
+      "소책자는 '양면 인쇄 – 짧은 쪽으로 넘김'으로 인쇄한 뒤 반으로 접으면 책이 돼요."] },
+  { title:"📝 텍스트 추출 — PDF 글자 뽑아내기",
+    one:"PDF 안의 글자를 뽑아 한글·워드에 붙여넣거나 TXT로 저장해요.",
+    steps:["PDF 1개를 올려요.",
+      "'텍스트 추출하기'를 눌러요.",
+      "아래 칸에 페이지별로 정리된 글자가 나와요.",
+      "'📋 전체 복사'로 붙여넣거나 '💾 TXT 파일로 저장'으로 받아요."],
+    tips:["'글자를 찾지 못했어요'가 나오면 그 PDF는 사진처럼 스캔된 거예요 → 'OCR' 탭을 쓰세요.",
+      "저장한 TXT는 메모장에서도 한글이 안 깨지고 열려요."] },
+  { title:"🔍 OCR — 스캔본·사진 속 글자 인식",
+    one:"글자를 복사할 수 없는 스캔 PDF나 사진 속 글씨를 인식해 텍스트로 만들어요.",
+    steps:["스캔 PDF 1개, 또는 사진 여러 장(JPG·PNG)을 올려요.",
+      "'언어'(한국어+영어 추천 / 한국어만 / 영어만)를 골라요.",
+      "PDF 일부만 하려면 '인식할 페이지'에 예: 1-3, 5. 비우면 전체.",
+      "'🔍 글자 인식 시작' → 처음엔 준비로 10~20초, 이후 페이지당 수 초~수십 초.",
+      "결과 칸에서 오타를 바로 고친 뒤 '📋 전체 복사'나 '💾 TXT 파일로 저장'."],
+    tips:["OCR은 100% 정확하지 않아요. 결과 칸에서 직접 고칠 수 있으니 꼭 검토하세요.",
+      "인식 중엔 창을 닫거나 다른 탭으로 넘어가지 말고 기다려 주세요."] },
+  { title:"🔧 OCR이 잘 안 될 때 (문제 해결)",
+    one:"인식이 잘 안 되면 아래 요령을 순서대로 시도해 보세요.",
+    steps:[],
+    tips:["글자가 <b>선명한 원본</b>을 쓰세요. 흐리거나 초점이 안 맞으면 잘 안 돼요.",
+      "<b>흰 바탕에 검은 글자</b>처럼 명암이 뚜렷할수록 정확해요. 밝은 곳에서 그림자 없이 찍으세요.",
+      "종이를 <b>비뚤어지지 않게</b> 글줄이 수평이 되도록 똑바로 스캔·촬영하세요.",
+      "글자가 작으면 <b>가까이서 크고 또렷하게</b> 찍으세요.",
+      "페이지가 많으면 '인식할 페이지'에 1-3처럼 <b>나눠서</b> 조금씩 해 보세요.",
+      "한글만 있으면 <b>'한국어만'</b>, 영어만 있으면 <b>'영어만'</b>을 고르면 더 정확해요.",
+      "손글씨·특이한 디자인 글꼴은 잘 안 돼요. <b>인쇄된 반듯한 글자</b>가 가장 잘 인식돼요."] },
+];
+function renderManual(){
+  const box = document.getElementById("manual-list");
+  if(box.childElementCount) return;   // 한 번만 생성
+  MANUAL.forEach((f)=>{
+    const item = document.createElement("div");
+    item.className = "man-item";
+    const stepsHtml = f.steps.length ? `<ol>${f.steps.map(s=>`<li>${s}</li>`).join("")}</ol>` : "";
+    const tipsHtml = f.tips.length ? `<ul class="tips">${f.tips.map(t=>`<li>${t}</li>`).join("")}</ul>` : "";
+    item.innerHTML = `
+      <button class="man-q" aria-expanded="false"><span>${f.title}</span><span class="arw">▶</span></button>
+      <div class="man-a"><div class="one">${f.one}</div>${stepsHtml}${tipsHtml}</div>`;
+    const q = item.querySelector(".man-q");
+    q.onclick = ()=>{
+      const open = item.classList.toggle("open");
+      q.setAttribute("aria-expanded", open ? "true":"false");
+    };
+    box.appendChild(item);
+  });
+}
+function openManual(){ renderManual(); document.getElementById("manual-modal").classList.add("open"); document.body.style.overflow="hidden"; }
+function closeManual(){ document.getElementById("manual-modal").classList.remove("open"); document.body.style.overflow=""; }
+document.getElementById("open-manual").onclick = openManual;
+document.getElementById("open-manual2").onclick = openManual;
+document.getElementById("close-manual").onclick = closeManual;
+document.getElementById("manual-modal").addEventListener("click", e=>{ if(e.target.id==="manual-modal") closeManual(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeManual(); });
 </script>
 </body>
 </html>
