@@ -127,6 +127,15 @@
   .minibtn{border:1px solid var(--line); background:#fff; color:var(--ink); padding:6px 10px;
     border-radius:8px; cursor:pointer; font-size:12.5px; font-family:inherit}
   .minibtn:hover{border-color:var(--brand); color:var(--brand)}
+  .split-quick{border:1px solid var(--line); background:#fafbff; border-radius:12px; padding:12px 14px; margin-top:14px}
+  .split-quick .sq-title{font-size:13.5px; font-weight:700; color:var(--ink); margin-bottom:8px}
+  .sq-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0}
+  .sq-label{font-size:13px; font-weight:600; color:var(--sub); min-width:96px}
+  .sq-row input[type=text]{flex:1; min-width:120px; width:auto; padding:8px 10px}
+  .sq-row input[type=number]{padding:8px 10px}
+  .sq-unit{font-size:13px; color:var(--sub)}
+  .minibtn.sq-go{background:#0d9488; color:#fff; border-color:#0d9488}
+  .minibtn.sq-go:hover{background:#0f766e; color:#fff}
   .sgallery{display:flex; flex-wrap:wrap; gap:0; margin-top:12px; user-select:none}
   .scell{display:flex; align-items:stretch}
   .spage{width:104px; padding:6px; border:2px solid var(--line); border-radius:9px; background:#fff;
@@ -247,6 +256,29 @@
       <div class="hint" id="split-help">
         · 페이지를 <b>클릭(터치는 톡 누르기)</b>하면 선택돼요. 마우스로 <b>드래그</b>하면 여러 쪽이 한꺼번에 선택돼요(파란색). · 페이지 사이 <b>✂</b>를 누르면 그 자리에서 잘려요(색깔 구간으로 나뉨).
       </div>
+
+      <div class="split-quick">
+        <div class="sq-title">⚡ 빠른 도구</div>
+        <div class="sq-row">
+          <span class="sq-label">번호로 선택</span>
+          <input type="text" id="sq-pages" placeholder="예: 1-3, 5, 8-10">
+          <button class="minibtn" id="sq-select">선택에 추가</button>
+        </div>
+        <div class="sq-row">
+          <span class="sq-label">몇 쪽씩 자르기</span>
+          <input type="number" id="sq-every" min="1" value="2" inputmode="numeric" style="width:74px">
+          <span class="sq-unit">쪽마다 ✂</span>
+          <button class="minibtn" id="sq-every-btn">가위 표시</button>
+        </div>
+        <div class="sq-row">
+          <span class="sq-label">용량으로 나누기</span>
+          <input type="number" id="sq-size" min="1" value="10" inputmode="numeric" style="width:74px">
+          <span class="sq-unit">MB 이하로</span>
+          <button class="minibtn sq-go" id="sq-size-btn">📧 나눠 저장</button>
+        </div>
+        <div class="hint" style="margin-top:2px">‘번호로 선택’·‘몇 쪽씩’은 화면에 표시만 해요. 실제 저장은 아래 파란/초록 버튼을 누르세요. ‘용량으로 나누기’는 바로 저장돼요(이메일 첨부 용량 제한용).</div>
+      </div>
+
       <div class="sgallery" id="split-gallery"></div>
     </div>
 
@@ -1046,6 +1078,82 @@ document.getElementById("split-selectall").onclick = ()=>{ splitSel.clear(); spl
 document.getElementById("split-clear").onclick = ()=>{ splitSel.clear(); updateSplitSelStyles(); updateSplitInfo(); };
 document.getElementById("split-cutall").onclick = ()=>{ splitCuts.clear(); for(let i=0;i<splitPages.length-1;i++) splitCuts.add(i); renderSplitGallery(); };
 document.getElementById("split-cutreset").onclick = ()=>{ splitCuts.clear(); renderSplitGallery(); };
+
+// 빠른 도구 1: 번호로 페이지 선택 (타이핑) → 선택에 추가
+document.getElementById("sq-select").onclick = ()=>{
+  if(!splitPages.length) return;
+  const str = document.getElementById("sq-pages").value;
+  try{
+    const idxs = parseRanges(str, splitPages.length);
+    idxs.forEach(i=>splitSel.add(i));
+    updateSplitSelStyles(); updateSplitInfo();
+    setStatus("status-split", `${idxs.length}쪽을 선택에 추가했어요. '선택한 페이지 추출하기'를 누르세요.`, "ok");
+  }catch(e){ setStatus("status-split", e.message, "err"); }
+};
+// 빠른 도구 2: N쪽마다 가위 표시
+document.getElementById("sq-every-btn").onclick = ()=>{
+  if(!splitPages.length) return;
+  const n = parseInt(document.getElementById("sq-every").value,10);
+  if(!n || n<1){ setStatus("status-split","1 이상의 숫자를 입력해 주세요.","err"); return; }
+  splitCuts.clear();
+  for(let i=n-1; i<splitPages.length-1; i+=n) splitCuts.add(i);
+  renderSplitGallery();
+  const segs = splitSegments().length;
+  setStatus("status-split", `${n}쪽마다 잘라 ${segs}조각으로 표시했어요. '가위로 자른 대로 분할하기'를 누르세요.`, "ok");
+};
+// 빠른 도구 3: 용량(MB)으로 분할 → 각 파일이 목표 용량 이하가 되도록 바로 저장
+document.getElementById("sq-size-btn").onclick = async ()=>{
+  if(!splitBytes) return;
+  const mb = parseFloat(document.getElementById("sq-size").value);
+  if(!mb || mb<=0){ setStatus("status-split","1 이상의 숫자를 입력해 주세요.","err"); return; }
+  const limit = mb*1024*1024;
+  const btn = document.getElementById("sq-size-btn"); btn.disabled = true;
+  document.getElementById("results-split").innerHTML = "";
+  setStatus("status-split","용량에 맞춰 나누는 중...",""); setBar("bar-split", 5);
+  const baseName = splitFile.name.replace(/\.pdf$/i,"");
+  try{
+    const src = await PDFDocument.load(splitBytes.slice(0), {ignoreEncryption:true});
+    const total = splitPages.length;
+    const segments = [];       // {start, end, bytes}
+    // cur를 한 쪽씩 키우며 저장. 한도를 넘으면, 넘기 '직전'에 저장해 둔 바이트(prevBytes)를
+    // 한 조각으로 확정한다. (removePage는 삽입 이미지 객체를 남겨 용량이 안 줄기 때문)
+    let cur = await PDFDocument.create();
+    let curStart = 0, oversize = false;
+    let prevBytes = null;      // cur가 유효했던 마지막(직전 페이지까지) 저장본
+    for(let i=0;i<total;i++){
+      const [pg] = await cur.copyPages(src, [splitPages[i].srcIndex]); cur.addPage(pg);
+      const bytes = await cur.save();
+      if(bytes.length > limit && cur.getPageCount() > 1){
+        // 직전까지(curStart..i-1)를 확정 — 이때 이미 저장해 둔 prevBytes 사용(오염 없음)
+        segments.push({start:curStart, end:i-1, bytes: prevBytes});
+        // 이 페이지로 새 조각 시작
+        cur = await PDFDocument.create();
+        const [pg2] = await cur.copyPages(src, [splitPages[i].srcIndex]); cur.addPage(pg2);
+        curStart = i;
+        prevBytes = await cur.save();
+        if(prevBytes.length > limit) oversize = true;   // 한 쪽만으로도 한도 초과
+      }else{
+        prevBytes = bytes;
+        if(bytes.length > limit) oversize = true;
+      }
+      setBar("bar-split", 5 + Math.round((i+1)/total*88));
+    }
+    segments.push({start:curStart, end:total-1, bytes: prevBytes});
+    const pad = String(segments.length).length;
+    const items = [];
+    segments.forEach((s,idx)=>{
+      const filename = `${baseName}_${String(idx+1).padStart(pad,"0")}.pdf`;
+      items.push({filename, bytes: s.bytes});
+      linkResult("results-split", s.bytes, filename, "application/pdf", `${s.start+1}~${s.end+1}쪽 · ${fmtSize(s.bytes.length)}`);
+    });
+    if(items.length > 1) addZipButton("results-split", items, `${baseName}_용량분할.zip`);
+    setBar("bar-split", 100);
+    let msg = `완료! ${mb}MB 기준 ${segments.length}조각으로 나눴어요`;
+    if(oversize) msg += " — 일부 페이지는 한 장만으로도 용량이 커서 그 페이지는 더 줄이지 못했어요('압축' 탭을 먼저 써 보세요).";
+    setStatus("status-split", msg, "ok");
+  }catch(e){ console.error(e); setStatus("status-split", friendlyError(e), "err"); }
+  finally{ setBar("bar-split", null); btn.disabled = false; }
+};
 
 // 선택한 페이지 추출 → PDF 1개
 document.getElementById("btn-split-extract").onclick = async ()=>{
@@ -1961,7 +2069,9 @@ const MANUAL = [
       "<b>여러 조각으로 자르기</b> → 페이지 사이 '✂'를 눌러요. 자른 자리마다 색깔 구간으로 나뉘고, '가위로 자른 대로 분할하기'를 눌러요.",
       "조각이 여러 개면 하나씩 저장하거나 '📦 ZIP으로 한 번에 저장'으로 받아요."],
     tips:["'✂ 모두 낱장'은 모든 페이지를 한 장씩 낱개로 나눠요. '가위 초기화'는 가위를 모두 지워요.",
-      "'추출'은 고른 쪽을 <b>1개 파일로</b>, '가위로 자르기'는 구간마다 <b>여러 개 파일로</b> 만들어요."] },
+      "'추출'은 고른 쪽을 <b>1개 파일로</b>, '가위로 자르기'는 구간마다 <b>여러 개 파일로</b> 만들어요.",
+      "<b>⚡ 빠른 도구</b> — '번호로 선택'에 <b>1-3, 5</b>처럼 적으면 그 쪽이 선택돼요. '몇 쪽씩 자르기'는 예: 10을 넣으면 10쪽마다 가위를 표시해요.",
+      "<b>📧 용량으로 나누기</b> — '10 MB 이하로'처럼 정하면 각 파일이 그 용량을 넘지 않게 자동으로 나눠 저장돼요. 이메일에 첨부 용량 제한이 있을 때 편해요."] },
   { title:"🗜️ 압축 — PDF 용량 줄이기",
     one:"사진·스캔이 많아 무거운 PDF를 가볍게 만들어 이메일·업로드하기 좋게 해요.",
     steps:["PDF 1개를 올려요.",
