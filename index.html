@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PDF 만능 도구 — 병합·분할·압축·변환·정리·워터마크</title>
+<!-- PWA: 컴퓨터·휴대폰에 앱으로 설치 가능 -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#3b6fe0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PDF 도구">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <script src="lib/pdf-lib.min.js"></script>
 <script src="lib/pdf.min.js"></script>
 <script src="lib/fflate.min.js"></script>
@@ -158,6 +167,8 @@
     border:1px solid rgba(255,255,255,.55); color:#fff; padding:8px 14px; border-radius:999px;
     font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit}
   .help-btn:hover{background:rgba(255,255,255,.32)}
+  .install-btn{right:auto; left:18px; background:#fff; color:var(--brand); border-color:#fff}
+  .install-btn:hover{background:#eaf1ff}
   @media(max-width:520px){ .help-btn{position:static; display:inline-block; margin-top:12px} }
   /* 설명서 모달 */
   .modal-back{position:fixed; inset:0; background:rgba(15,23,42,.55); display:none;
@@ -196,6 +207,7 @@
 </head>
 <body>
 <header>
+  <button class="help-btn install-btn" id="install-btn" style="display:none">💻 앱 설치</button>
   <button class="help-btn" id="open-manual">📖 설명서</button>
   <h1>📄 PDF 만능 도구</h1>
   <p>병합 · 분할 · 압축 · 변환 · 정리 · 쪽번호 · 워터마크 · 모아찍기 · OCR — 인터넷 없이, 무제한 무료</p>
@@ -2184,6 +2196,26 @@ document.getElementById("open-manual2").onclick = openManual;
 document.getElementById("close-manual").onclick = closeManual;
 document.getElementById("manual-modal").addEventListener("click", e=>{ if(e.target.id==="manual-modal") closeManual(); });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeManual(); });
+
+// ================= PWA: 앱 설치 =================
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
+}
+let deferredInstall = null;
+const installBtn = document.getElementById("install-btn");
+window.addEventListener("beforeinstallprompt", (e)=>{
+  e.preventDefault();
+  deferredInstall = e;
+  installBtn.style.display = "";      // 설치 지원 브라우저(크롬·엣지)에서만 버튼 노출
+});
+installBtn.onclick = async ()=>{
+  if(!deferredInstall) return;
+  deferredInstall.prompt();
+  try{ await deferredInstall.userChoice; }catch(e){}
+  deferredInstall = null;
+  installBtn.style.display = "none";
+};
+window.addEventListener("appinstalled", ()=>{ installBtn.style.display = "none"; deferredInstall = null; });
 </script>
 </body>
 </html>
