@@ -116,6 +116,12 @@
   .results a .dl{flex:none; white-space:nowrap; font-size:12px; opacity:.8}
   .savenote{background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px;
     padding:9px 12px; font-size:12.5px; margin-bottom:8px}
+  /* 실시간 미리보기 */
+  .preview-box{margin-top:16px; border:1px solid var(--line); border-radius:12px; background:#f8fafc; padding:12px; text-align:center}
+  .preview-box .plabel{font-size:12.5px; font-weight:700; color:var(--sub); margin-bottom:8px}
+  .preview-box canvas{max-width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  .preview-box .pnote{font-size:12px; color:var(--sub); margin-top:8px}
+  .preview-box .pnote b{color:var(--ink)}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   @media(max-width:520px){.grid2{grid-template-columns:1fr}}
   /* 페이지 정리 썸네일 */
@@ -327,6 +333,11 @@
       </div>
       <label class="check"><input type="checkbox" id="c-gray"> 흑백(회색조)으로 변환 — 잉크 절약, 용량 추가 감소</label>
       <div class="hint">※ 스캔본·사진 PDF에서 효과가 큽니다. 글자만 있는 PDF는 거의 안 줄어들 수 있어요.</div>
+      <div class="preview-box" id="compress-preview-box" style="display:none">
+        <div class="plabel">미리보기 (이 설정으로 변환한 첫 페이지)</div>
+        <canvas id="compress-preview"></canvas>
+        <div class="pnote" id="compress-preview-note"></div>
+      </div>
     </div>
 
     <button class="btn" id="btn-compress" disabled>PDF 압축하기</button>
@@ -366,6 +377,10 @@
         </div>
       </div>
       <div class="hint">이미지는 용지 안에 비율을 유지한 채 최대 크기로, 가운데에 배치됩니다.</div>
+      <div class="preview-box" id="img2pdf-preview-box" style="display:none">
+        <div class="plabel">미리보기 (첫 번째 이미지가 놓이는 모습)</div>
+        <canvas id="img2pdf-preview"></canvas>
+      </div>
     </div>
 
     <button class="btn" id="btn-img2pdf" disabled>PDF 만들기</button>
@@ -485,6 +500,11 @@
         </div>
       </div>
       <label class="check"><input type="checkbox" id="num-skipfirst"> 첫 페이지(표지)에는 번호 표시 안 함</label>
+      <div class="preview-box" id="num-preview-box" style="display:none">
+        <div class="plabel">미리보기 (첫 페이지)</div>
+        <canvas id="num-preview"></canvas>
+        <div class="pnote" id="num-preview-note"></div>
+      </div>
     </div>
 
     <button class="btn" id="btn-number" disabled>쪽번호 넣기</button>
@@ -579,6 +599,11 @@
           </div>
         </div>
       </div>
+
+      <div class="preview-box" id="wm-preview-box" style="display:none">
+        <div class="plabel">미리보기 (첫 페이지)</div>
+        <canvas id="wm-preview"></canvas>
+      </div>
     </div>
 
     <button class="btn" id="btn-watermark" disabled>워터마크 넣기</button>
@@ -612,6 +637,10 @@
           <span class="s">양면 인쇄 후 반 접으면 책이 되도록 쪽 순서 자동 배치</span></span></label>
       </div>
       <div class="hint" id="nup-hint"></div>
+      <div class="preview-box" id="nup-preview-box" style="display:none">
+        <div class="plabel">미리보기 (한 장에 어떻게 배치되는지)</div>
+        <canvas id="nup-preview"></canvas>
+      </div>
     </div>
 
     <button class="btn" id="btn-nup" disabled>만들기</button>
@@ -734,6 +763,28 @@ function confirmHeavy(total, size){
   }
   return true;
 }
+// 실시간 미리보기용: PDF 첫 페이지를 화면 크기 캔버스로 렌더(파일별 1회 캐시)
+const firstPageCache = new WeakMap();
+async function getFirstPage(file, maxW=460){
+  if(firstPageCache.has(file)) return firstPageCache.get(file);
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf.slice(0)}).promise;
+  const page = await pdf.getPage(1);
+  const vp1 = page.getViewport({scale:1});
+  const scale = Math.min(maxW/vp1.width, 2);
+  const vp = page.getViewport({scale});
+  const c = document.createElement("canvas");
+  c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+  const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,c.width,c.height);
+  // intent:"print" — 탭이 백그라운드여도 렌더가 멈추지 않음
+  await page.render({canvasContext:ctx, viewport:vp, intent:"print"}).promise;
+  page.cleanup();
+  const res = { canvas:c, ptW:vp1.width, ptH:vp1.height, scale, pages:pdf.numPages };
+  firstPageCache.set(file, res);
+  return res;
+}
+// 워터마크 색상 매핑(미리보기·실제 공용)
+const WM_COLORS = {gray:"#737373", red:"#d92626", blue:"#3366d9"};
 function setBar(id, pct){
   const bar = document.getElementById(id);
   bar.style.display = pct == null ? "none" : "block";
@@ -1237,12 +1288,54 @@ function renderCompress(){
     row.querySelector('[data-a=del]').onclick = ()=>{ compressFile=null; renderCompress(); document.getElementById("results-compress").innerHTML=""; setStatus("status-compress",""); };
     list.appendChild(row);
   }
+  document.getElementById("compress-preview-box").style.display = compressFile ? "block":"none";
+  if(compressFile) renderCompressPreview();
 }
 const LEVELS = {
   high:   {scale:1.0, quality:0.5},
   medium: {scale:1.3, quality:0.65},
   low:    {scale:1.7, quality:0.8},
 };
+// 압축 미리보기: 선택한 강도로 첫 페이지를 실제 재변환해 화질을 보여주고 예상 용량 표시
+let cPvBusy=false, cPvAgain=false;
+async function renderCompressPreview(){
+  const box=document.getElementById("compress-preview-box");
+  if(!compressFile){ box.style.display="none"; return; }
+  if(cPvBusy){ cPvAgain=true; return; }
+  cPvBusy=true;
+  const note=document.getElementById("compress-preview-note");
+  const pv=document.getElementById("compress-preview");
+  try{
+    const level=document.querySelector('input[name=clevel]:checked').value;
+    const gray=document.getElementById("c-gray").checked;
+    const {scale, quality}=LEVELS[level];
+    note.textContent="미리보기 만드는 중...";
+    const buf=await compressFile.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;
+    const pages=pdf.numPages;
+    const page=await pdf.getPage(1);
+    const vp=page.getViewport({scale});
+    let c=document.createElement("canvas"); c.width=Math.floor(vp.width); c.height=Math.floor(vp.height);
+    const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:ctx, viewport:vp, intent:"print"}).promise;
+    page.cleanup();
+    if(gray){ const g=document.createElement("canvas"); g.width=c.width; g.height=c.height; const gc=g.getContext("2d"); gc.filter="grayscale(1)"; gc.drawImage(c,0,0); c=g; }
+    const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));
+    const img=await createImageBitmap(blob);
+    const dispW=Math.min(460, img.width), dispH=Math.round(img.height*Math.min(460,img.width)/img.width);
+    pv.width=dispW; pv.height=dispH;
+    pv.getContext("2d").drawImage(img,0,0,dispW,dispH);
+    if(img.close) img.close();
+    const est=blob.size*pages, orig=compressFile.size, ratio=Math.round((1-est/orig)*100);
+    note.innerHTML = est<orig
+      ? `예상 용량: <b>${fmtSize(orig)} → 약 ${fmtSize(est)}</b> (약 ${ratio}% 감소) · 전체 쪽수 기준 대략적 추정이에요`
+      : `이 파일은 이 설정으론 거의 안 줄어요(약 <b>${fmtSize(est)}</b>). '강하게'를 써 보세요.`;
+    box.style.display="block";
+  }catch(e){ console.error(e); note.textContent=""; }
+  finally{ cPvBusy=false; if(cPvAgain){ cPvAgain=false; renderCompressPreview(); } }
+}
+document.querySelectorAll('input[name=clevel]').forEach(r=>r.addEventListener("change", renderCompressPreview));
+document.getElementById("c-gray").addEventListener("change", renderCompressPreview);
 document.getElementById("btn-compress").onclick = async ()=>{
   if(!compressFile) return;
   const btn = document.getElementById("btn-compress"); btn.disabled = true;
@@ -1343,7 +1436,35 @@ function renderImg2Pdf(){
   });
   document.getElementById("img2pdf-opts").style.display = imgFiles.length ? "block":"none";
   document.getElementById("btn-img2pdf").disabled = !imgFiles.length;
+  document.getElementById("img2pdf-preview-box").style.display = imgFiles.length ? "block":"none";
+  if(imgFiles.length) renderImg2pdfPreview();
 }
+// 이미지→PDF 미리보기: 선택한 용지·여백에 첫 이미지가 놓이는 모습
+async function renderImg2pdfPreview(){
+  const box=document.getElementById("img2pdf-preview-box");
+  if(!imgFiles.length){ box.style.display="none"; return; }
+  try{
+    const sizeMode=document.getElementById("img-pagesize").value;
+    const margin=parseInt(document.getElementById("img-margin").value,10);
+    const img=await loadImageEl(imgFiles[0]);
+    const A4=[595.28,841.89];
+    let pw,ph;
+    if(sizeMode==="a4p"){ [pw,ph]=A4; }
+    else if(sizeMode==="a4l"){ [pw,ph]=[A4[1],A4[0]]; }
+    else { pw=img.naturalWidth*0.75+margin*2; ph=img.naturalHeight*0.75+margin*2; }
+    const scale=Math.min(360/pw, 440/ph);
+    const pv=document.getElementById("img2pdf-preview");
+    pv.width=Math.max(1,Math.round(pw*scale)); pv.height=Math.max(1,Math.round(ph*scale));
+    const ctx=pv.getContext("2d");
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,pv.width,pv.height);
+    const availW=pw-margin*2, availH=ph-margin*2;
+    const r=Math.min(availW/img.naturalWidth, availH/img.naturalHeight);
+    const w=img.naturalWidth*r, h=img.naturalHeight*r;
+    ctx.drawImage(img, (pw-w)/2*scale, (ph-h)/2*scale, w*scale, h*scale);
+    box.style.display="block";
+  }catch(e){ console.error(e); }
+}
+["img-pagesize","img-margin"].forEach(id=>document.getElementById(id).addEventListener("change", renderImg2pdfPreview));
 async function embedImageFile(doc, file){
   const type = (file.type||"").toLowerCase();
   if(type === "image/jpeg"){
@@ -1563,6 +1684,68 @@ document.getElementById("btn-organize").onclick = async ()=>{
 const numState = singlePdfPicker("number", st=>{
   document.getElementById("number-opts").style.display = st.file ? "block":"none";
   document.getElementById("btn-number").disabled = !st.file;
+  document.getElementById("num-preview-box").style.display = st.file ? "block":"none";
+  if(st.file) renderNumPreview();
+});
+// 쪽번호 미리보기: 첫 페이지에 실제 위치·모양·크기로 번호를 얹어 그림
+let numPvBusy = false, numPvAgain = false;
+async function renderNumPreview(){
+  const box = document.getElementById("num-preview-box");
+  if(!numState.file){ box.style.display="none"; return; }
+  if(numPvBusy){ numPvAgain = true; return; }
+  numPvBusy = true;
+  try{
+    const {canvas:base, scale, pages} = await getFirstPage(numState.file);
+    const pv = document.getElementById("num-preview");
+    pv.width = base.width; pv.height = base.height;
+    const ctx = pv.getContext("2d");
+    ctx.drawImage(base, 0, 0);
+    const pos = document.getElementById("num-pos").value;
+    const fmt = document.getElementById("num-fmt").value;
+    const start = parseInt(document.getElementById("num-start").value,10) || 1;
+    const size = parseInt(document.getElementById("num-size").value,10);
+    const skipFirst = document.getElementById("num-skipfirst").checked;
+    const lastNum = start + (pages - (skipFirst?1:0)) - 1;
+    // 첫 페이지가 받을 번호 (표지 제외면 표지엔 번호 없음)
+    const shownNum = skipFirst ? null : start;
+    const note = document.getElementById("num-preview-note");
+    if(shownNum === null){
+      note.innerHTML = "표지(첫 페이지)에는 번호가 <b>표시되지 않아요</b>. 본문 첫 쪽부터 "+start+"번이 매겨져요.";
+    }else{
+      note.textContent = "";
+    }
+    if(shownNum !== null){
+      let label = String(shownNum);
+      if(fmt==="dash") label = `- ${shownNum} -`;
+      else if(fmt==="total") label = `${shownNum} / ${lastNum}`;
+      const fontPx = size*scale;
+      ctx.font = `${fontPx}px "Malgun Gothic",${WM_FONT}`;
+      ctx.fillStyle = "rgb(64,64,64)";
+      const tw = ctx.measureText(label).width;
+      const m = 20*scale;
+      let x, y;
+      if(pos==="bc"){ x=(pv.width-tw)/2; y=pv.height-m; ctx.textBaseline="alphabetic"; }
+      else if(pos==="br"){ x=pv.width-tw-28*scale; y=pv.height-m; ctx.textBaseline="alphabetic"; }
+      else if(pos==="bl"){ x=28*scale; y=pv.height-m; ctx.textBaseline="alphabetic"; }
+      else if(pos==="tr"){ x=pv.width-tw-28*scale; y=m; ctx.textBaseline="top"; }
+      else { x=28*scale; y=m; ctx.textBaseline="top"; }
+      // 가독성 위해 옅은 흰 배경 박스
+      const pad=4*scale;
+      ctx.save();
+      ctx.fillStyle="rgba(255,255,255,0.75)";
+      const boxY = ctx.textBaseline==="top" ? y : y-fontPx;
+      ctx.fillRect(x-pad, boxY-pad, tw+pad*2, fontPx+pad*2);
+      ctx.restore();
+      ctx.fillStyle = "rgb(64,64,64)";
+      ctx.fillText(label, x, y);
+    }
+    box.style.display = "block";
+  }catch(e){ console.error(e); }
+  finally{ numPvBusy=false; if(numPvAgain){ numPvAgain=false; renderNumPreview(); } }
+}
+["num-pos","num-fmt","num-start","num-size","num-skipfirst"].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener(el.type==="number" ? "input" : "change", renderNumPreview);
 });
 document.getElementById("btn-number").onclick = async ()=>{
   if(!numState.file) return;
@@ -1610,9 +1793,22 @@ document.getElementById("btn-number").onclick = async ()=>{
 };
 
 // ================= 워터마크 =================
+// 파일→Image 캐시 (미리보기용)
+const imgElCache = new WeakMap();
+function loadImageEl(file){
+  if(imgElCache.has(file)) return Promise.resolve(imgElCache.get(file));
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file); const im=new Image();
+    im.onload=()=>{ imgElCache.set(file,im); res(im); };
+    im.onerror=()=>rej(new Error("이미지 로드 실패")); im.src=url;
+  });
+}
+const WM_FONT = '"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif';
 const wmState = singlePdfPicker("watermark", st=>{
   document.getElementById("wm-opts").style.display = st.file ? "block":"none";
   document.getElementById("btn-watermark").disabled = !st.file;
+  document.getElementById("wm-preview-box").style.display = st.file ? "block":"none";
+  if(st.file) renderWmPreview();
 });
 let wmImgFile = null;
 document.querySelectorAll('input[name=wmmode]').forEach(r=>{
@@ -1620,6 +1816,7 @@ document.querySelectorAll('input[name=wmmode]').forEach(r=>{
     const isText = document.querySelector('input[name=wmmode]:checked').value === "text";
     document.getElementById("wm-text-box").style.display = isText ? "block":"none";
     document.getElementById("wm-image-box").style.display = isText ? "none":"block";
+    renderWmPreview();
   };
 });
 setupDrop("drop-wmimg","file-wmimg", files=>{
@@ -1637,10 +1834,60 @@ setupDrop("drop-wmimg","file-wmimg", files=>{
   row.appendChild(name);
   const del = document.createElement("button");
   del.textContent = "✕";
-  del.onclick = ()=>{ wmImgFile=null; list.innerHTML=""; };
+  del.onclick = ()=>{ wmImgFile=null; list.innerHTML=""; renderWmPreview(); };
   row.appendChild(del);
   list.appendChild(row);
+  renderWmPreview();
 }, isImg);
+// 워터마크 미리보기: 첫 페이지 위에 현재 설정으로 워터마크를 얹어 그림
+let wmPvBusy = false, wmPvAgain = false;
+async function renderWmPreview(){
+  const box = document.getElementById("wm-preview-box");
+  if(!wmState.file){ box.style.display="none"; return; }
+  if(wmPvBusy){ wmPvAgain = true; return; }
+  wmPvBusy = true;
+  try{
+    const {canvas:base, scale} = await getFirstPage(wmState.file);
+    const pv = document.getElementById("wm-preview");
+    pv.width = base.width; pv.height = base.height;
+    const ctx = pv.getContext("2d");
+    ctx.drawImage(base, 0, 0);
+    const mode = document.querySelector('input[name=wmmode]:checked').value;
+    if(mode === "text"){
+      const text = document.getElementById("wm-text").value.trim() || "워터마크";
+      const size = parseInt(document.getElementById("wm-size").value,10);
+      const opacity = parseFloat(document.getElementById("wm-opacity").value);
+      const diag = document.getElementById("wm-diag").value === "1";
+      const colorHex = WM_COLORS[document.getElementById("wm-color").value];
+      ctx.save();
+      ctx.translate(pv.width/2, pv.height/2);
+      if(diag) ctx.rotate(-Math.PI/4);
+      let fontPx = size*scale;
+      ctx.font = `bold ${fontPx}px ${WM_FONT}`;
+      const maxLen = (diag ? Math.hypot(pv.width,pv.height) : pv.width)*0.92;
+      const measured = ctx.measureText(text).width;
+      if(measured > maxLen){ fontPx *= maxLen/measured; ctx.font = `bold ${fontPx}px ${WM_FONT}`; }
+      ctx.globalAlpha = opacity; ctx.fillStyle = colorHex;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+    }else if(wmImgFile){
+      const frac = parseFloat(document.getElementById("wmi-scale").value);
+      const opacity = parseFloat(document.getElementById("wmi-opacity").value);
+      const img = await loadImageEl(wmImgFile);
+      const iw = pv.width*frac, ih = iw*img.naturalHeight/img.naturalWidth;
+      ctx.globalAlpha = opacity;
+      ctx.drawImage(img, (pv.width-iw)/2, (pv.height-ih)/2, iw, ih);
+      ctx.globalAlpha = 1;
+    }
+    box.style.display = "block";
+  }catch(e){ console.error(e); }
+  finally{ wmPvBusy = false; if(wmPvAgain){ wmPvAgain = false; renderWmPreview(); } }
+}
+["wm-text","wm-size","wm-color","wm-opacity","wm-diag","wmi-scale","wmi-opacity"].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener(el.tagName==="INPUT" && el.type==="text" ? "input" : "change", renderWmPreview);
+});
 document.getElementById("btn-watermark").onclick = async ()=>{
   if(!wmState.file) return;
   const mode = document.querySelector('input[name=wmmode]:checked').value;
@@ -1721,6 +1968,8 @@ document.getElementById("btn-watermark").onclick = async ()=>{
 const nupState = singlePdfPicker("nup", st=>{
   document.getElementById("nup-opts").style.display = st.file ? "block":"none";
   document.getElementById("btn-nup").disabled = !st.file;
+  document.getElementById("nup-preview-box").style.display = st.file ? "block":"none";
+  if(st.file) renderNupPreview();
 });
 const NUP_HINTS = {
   "2up": "결과물을 A4 가로로 인쇄하면 한 장에 2쪽씩 나옵니다.",
@@ -1728,9 +1977,52 @@ const NUP_HINTS = {
   "booklet": "📖 인쇄 시 '양면 인쇄 – 짧은 쪽으로 넘김'을 선택한 뒤, 전체를 반으로 접으면 책이 됩니다."
 };
 document.querySelectorAll('input[name=nupmode]').forEach(r=>{
-  r.onchange = ()=>{ document.getElementById("nup-hint").textContent = NUP_HINTS[document.querySelector('input[name=nupmode]:checked').value]; };
+  r.onchange = ()=>{
+    document.getElementById("nup-hint").textContent = NUP_HINTS[document.querySelector('input[name=nupmode]:checked').value];
+    renderNupPreview();
+  };
 });
 document.getElementById("nup-hint").textContent = NUP_HINTS["2up"];
+// 모아찍기 미리보기: 한 장에 쪽이 어떻게 배치되는지 도식으로 표시
+async function renderNupPreview(){
+  const box=document.getElementById("nup-preview-box");
+  if(!nupState.file){ box.style.display="none"; return; }
+  try{
+    const mode=document.querySelector('input[name=nupmode]:checked').value;
+    const pv=document.getElementById("nup-preview");
+    const A4=[595.28,841.89];
+    const landscape=(mode!=="4up");           // 2쪽·소책자=가로, 4쪽=세로
+    const pw=landscape?A4[1]:A4[0], ph=landscape?A4[0]:A4[1];
+    const scale=Math.min(430/pw, 300/ph);
+    pv.width=Math.round(pw*scale); pv.height=Math.round(ph*scale);
+    const ctx=pv.getContext("2d");
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,pv.width,pv.height);
+    const M=14*scale, GAP=8*scale;
+    let cells=[];
+    if(mode==="4up"){
+      const cw=(pv.width-M*2-GAP)/2, ch=(pv.height-M*2-GAP)/2;
+      cells=[{x:M,y:M,w:cw,h:ch,label:"1"},{x:M+cw+GAP,y:M,w:cw,h:ch,label:"2"},
+             {x:M,y:M+ch+GAP,w:cw,h:ch,label:"3"},{x:M+cw+GAP,y:M+ch+GAP,w:cw,h:ch,label:"4"}];
+    }else if(mode==="2up"){
+      const cw=(pv.width-M*2-GAP)/2, ch=pv.height-M*2;
+      cells=[{x:M,y:M,w:cw,h:ch,label:"1"},{x:M+cw+GAP,y:M,w:cw,h:ch,label:"2"}];
+    }else{
+      const {pages}=await getFirstPage(nupState.file);
+      const first=bookletOrder(pages)[0];
+      const lab=v=> v==null?"빈쪽":String(v+1);
+      const cw=(pv.width-M*2-GAP)/2, ch=pv.height-M*2;
+      cells=[{x:M,y:M,w:cw,h:ch,label:lab(first[0])},{x:M+cw+GAP,y:M,w:cw,h:ch,label:lab(first[1])}];
+    }
+    cells.forEach(c=>{
+      ctx.fillStyle="#eef3ff"; ctx.strokeStyle="#a9c0ee"; ctx.lineWidth=Math.max(1,1.5*scale);
+      ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
+      ctx.fillStyle="#3b6fe0"; ctx.font=`bold ${Math.round(Math.min(c.w,c.h)*0.42)}px sans-serif`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(c.label, c.x+c.w/2, c.y+c.h/2);
+    });
+    box.style.display="block";
+  }catch(e){ console.error(e); }
+}
 // 소책자 쪽 순서: m쪽(4의 배수로 채움)일 때 면 k → k짝수 [m-k, k+1], k홀수 [k+1, m-k] (1기준)
 function bookletOrder(total){
   const m = Math.ceil(total/4)*4;
