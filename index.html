@@ -122,6 +122,14 @@
   .preview-box canvas{max-width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.07)}
   .preview-box .pnote{font-size:12px; color:var(--sub); margin-top:8px}
   .preview-box .pnote b{color:var(--ink)}
+  /* 워터마크 위치 선택 */
+  .wm-poswrap{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:2px}
+  .wm-posgrid{display:grid; grid-template-columns:repeat(3,34px); grid-template-rows:repeat(3,34px); gap:4px}
+  .wm-posgrid button{border:1px solid var(--line); background:#fff; border-radius:7px; cursor:pointer; font-size:15px; color:var(--sub); padding:0; line-height:1; font-family:inherit}
+  .wm-posgrid button:hover{border-color:var(--brand); color:var(--brand)}
+  .wm-posgrid button.sel{background:var(--brand); border-color:var(--brand); color:#fff}
+  .wm-posgrid.dim{opacity:.4; pointer-events:none}
+  #wm-tile.on{background:var(--brand); color:#fff; border-color:var(--brand)}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   @media(max-width:520px){.grid2{grid-template-columns:1fr}}
   /* 페이지 정리 썸네일 */
@@ -531,6 +539,22 @@
           <span><span class="t">글자</span><span class="s"> · 한글 가능 (예: 해누리중 배포용)</span></span></label>
         <label><input type="radio" name="wmmode" value="image">
           <span><span class="t">이미지 (로고·도장)</span><span class="s"> · PNG 투명 배경 추천</span></span></label>
+      </div>
+
+      <label class="f">위치</label>
+      <div class="wm-poswrap">
+        <div class="wm-posgrid" id="wm-posgrid" role="group" aria-label="워터마크 위치">
+          <button type="button" data-pos="tl" title="왼쪽 위">↖</button>
+          <button type="button" data-pos="tc" title="가운데 위">↑</button>
+          <button type="button" data-pos="tr" title="오른쪽 위">↗</button>
+          <button type="button" data-pos="ml" title="왼쪽 가운데">←</button>
+          <button type="button" data-pos="mc" title="정중앙" class="sel">●</button>
+          <button type="button" data-pos="mr" title="오른쪽 가운데">→</button>
+          <button type="button" data-pos="bl" title="왼쪽 아래">↙</button>
+          <button type="button" data-pos="bc" title="가운데 아래">↓</button>
+          <button type="button" data-pos="br" title="오른쪽 아래">↘</button>
+        </div>
+        <button type="button" class="minibtn" id="wm-tile">🔁 페이지 가득 채우기 (반복)</button>
       </div>
 
       <div id="wm-text-box">
@@ -1804,6 +1828,54 @@ function loadImageEl(file){
   });
 }
 const WM_FONT = '"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+// 워터마크 위치 상태 (9칸 그리드 + 가득 채우기)
+let wmGridPos = "mc", wmTile = false;
+function wmEffPos(){ return wmTile ? "tile" : wmGridPos; }
+// 위치 코드(tl,tc,tr,ml,mc,mr,bl,bc,br)로 워터마크 중심점 계산
+function wmAnchor(pos, W, H, w, h){
+  const gap = Math.min(W,H)*0.03;
+  const mx = w/2 + gap, my = h/2 + gap;
+  const cx = {l:mx, c:W/2, r:W-mx}[pos[1]];
+  const cy = {t:my, m:H/2, b:H-my}[pos[0]];
+  return {cx, cy};
+}
+// 워터마크만 캔버스에 그림(배경은 호출자 담당). 미리보기·실제 출력 공용 → 항상 일치
+function paintWatermark(ctx, W, H, c){
+  ctx.save();
+  ctx.globalAlpha = c.opacity;
+  if(c.mode === "text"){
+    ctx.fillStyle = c.colorHex;
+    let fontPx = c.fontPx;
+    ctx.font = `bold ${fontPx}px ${WM_FONT}`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    let tw = ctx.measureText(c.text).width;
+    const rot = c.diag ? -Math.PI/4 : 0;
+    if(c.pos === "tile"){
+      ctx.translate(W/2, H/2); ctx.rotate(rot);
+      const stepX = Math.max(tw*1.5, fontPx*3), stepY = fontPx*3.4;
+      const R = Math.hypot(W,H)/2 + Math.max(stepX,stepY);
+      for(let y=-R; y<=R; y+=stepY) for(let x=-R; x<=R; x+=stepX) ctx.fillText(c.text, x, y);
+    }else{
+      if(c.pos === "mc"){   // 정중앙일 때만 페이지에 맞춰 축소
+        const maxLen = (c.diag ? Math.hypot(W,H) : W)*0.92;
+        if(tw > maxLen){ fontPx *= maxLen/tw; ctx.font = `bold ${fontPx}px ${WM_FONT}`; tw = ctx.measureText(c.text).width; }
+      }
+      const {cx,cy} = wmAnchor(c.pos, W, H, tw, fontPx);
+      ctx.translate(cx, cy); ctx.rotate(rot);
+      ctx.fillText(c.text, 0, 0);
+    }
+  }else if(c.img){
+    const iw = W*c.imgFrac, ih = iw*c.img.naturalHeight/c.img.naturalWidth;
+    if(c.pos === "tile"){
+      const stepX = iw*1.2, stepY = ih*1.2;
+      for(let y=0; y<H+ih; y+=stepY) for(let x=0; x<W+iw; x+=stepX) ctx.drawImage(c.img, x-iw/2, y-ih/2, iw, ih);
+    }else{
+      const {cx,cy} = wmAnchor(c.pos, W, H, iw, ih);
+      ctx.drawImage(c.img, cx-iw/2, cy-ih/2, iw, ih);
+    }
+  }
+  ctx.restore();
+}
 const wmState = singlePdfPicker("watermark", st=>{
   document.getElementById("wm-opts").style.display = st.file ? "block":"none";
   document.getElementById("btn-watermark").disabled = !st.file;
@@ -1819,6 +1891,16 @@ document.querySelectorAll('input[name=wmmode]').forEach(r=>{
     renderWmPreview();
   };
 });
+// 위치 그리드 · 가득 채우기
+function updateWmPosUI(){
+  document.querySelectorAll("#wm-posgrid button").forEach(b=>b.classList.toggle("sel", b.dataset.pos===wmGridPos && !wmTile));
+  document.getElementById("wm-posgrid").classList.toggle("dim", wmTile);
+  document.getElementById("wm-tile").classList.toggle("on", wmTile);
+}
+document.querySelectorAll("#wm-posgrid button").forEach(b=>{
+  b.onclick = ()=>{ wmGridPos = b.dataset.pos; wmTile = false; updateWmPosUI(); renderWmPreview(); };
+});
+document.getElementById("wm-tile").onclick = ()=>{ wmTile = !wmTile; updateWmPosUI(); renderWmPreview(); };
 setupDrop("drop-wmimg","file-wmimg", files=>{
   wmImgFile = files[0];
   const list = document.getElementById("list-wmimg");
@@ -1853,32 +1935,25 @@ async function renderWmPreview(){
     const ctx = pv.getContext("2d");
     ctx.drawImage(base, 0, 0);
     const mode = document.querySelector('input[name=wmmode]:checked').value;
+    const pos = wmEffPos();
     if(mode === "text"){
-      const text = document.getElementById("wm-text").value.trim() || "워터마크";
-      const size = parseInt(document.getElementById("wm-size").value,10);
-      const opacity = parseFloat(document.getElementById("wm-opacity").value);
-      const diag = document.getElementById("wm-diag").value === "1";
-      const colorHex = WM_COLORS[document.getElementById("wm-color").value];
-      ctx.save();
-      ctx.translate(pv.width/2, pv.height/2);
-      if(diag) ctx.rotate(-Math.PI/4);
-      let fontPx = size*scale;
-      ctx.font = `bold ${fontPx}px ${WM_FONT}`;
-      const maxLen = (diag ? Math.hypot(pv.width,pv.height) : pv.width)*0.92;
-      const measured = ctx.measureText(text).width;
-      if(measured > maxLen){ fontPx *= maxLen/measured; ctx.font = `bold ${fontPx}px ${WM_FONT}`; }
-      ctx.globalAlpha = opacity; ctx.fillStyle = colorHex;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(text, 0, 0);
-      ctx.restore();
+      paintWatermark(ctx, pv.width, pv.height, {
+        mode:"text",
+        text: document.getElementById("wm-text").value.trim() || "워터마크",
+        fontPx: parseInt(document.getElementById("wm-size").value,10)*scale,
+        colorHex: WM_COLORS[document.getElementById("wm-color").value],
+        opacity: parseFloat(document.getElementById("wm-opacity").value),
+        diag: document.getElementById("wm-diag").value === "1",
+        pos
+      });
     }else if(wmImgFile){
-      const frac = parseFloat(document.getElementById("wmi-scale").value);
-      const opacity = parseFloat(document.getElementById("wmi-opacity").value);
       const img = await loadImageEl(wmImgFile);
-      const iw = pv.width*frac, ih = iw*img.naturalHeight/img.naturalWidth;
-      ctx.globalAlpha = opacity;
-      ctx.drawImage(img, (pv.width-iw)/2, (pv.height-ih)/2, iw, ih);
-      ctx.globalAlpha = 1;
+      paintWatermark(ctx, pv.width, pv.height, {
+        mode:"image", img,
+        imgFrac: parseFloat(document.getElementById("wmi-scale").value),
+        opacity: parseFloat(document.getElementById("wmi-opacity").value),
+        pos
+      });
     }
     box.style.display = "block";
   }catch(e){ console.error(e); }
@@ -1905,54 +1980,42 @@ document.getElementById("btn-watermark").onclick = async ()=>{
     const bytes = await wmState.file.arrayBuffer();
     const doc = await PDFDocument.load(bytes, {ignoreEncryption:true});
     const pages = doc.getPages();
-    if(mode === "text"){
-      const text = document.getElementById("wm-text").value.trim();
-      const size = parseInt(document.getElementById("wm-size").value,10);
-      const opacity = parseFloat(document.getElementById("wm-opacity").value);
-      const diag = document.getElementById("wm-diag").value === "1";
-      const colorHex = {gray:"#737373", red:"#d92626", blue:"#3366d9"}[document.getElementById("wm-color").value];
-      const SCALE = 2;   // 워터마크 이미지 선명도
-      const fontStack = '"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif';
-      // 브라우저가 글자를 직접 그려 이미지로 얹음 → 한자·기호 등 어떤 글자든 확실히 표시, 폰트 파일 불필요
-      const cache = new Map();   // 같은 크기 페이지는 워터마크 이미지 재사용
-      for(let i=0;i<pages.length;i++){
-        const p = pages[i];
-        const {width:w, height:h} = p.getSize();
-        const key = Math.round(w)+"x"+Math.round(h);
-        let emb = cache.get(key);
-        if(!emb){
-          const cw = Math.max(1,Math.round(w*SCALE)), ch = Math.max(1,Math.round(h*SCALE));
-          const cv = document.createElement("canvas"); cv.width=cw; cv.height=ch;
-          const ctx = cv.getContext("2d");
-          ctx.translate(cw/2, ch/2);
-          if(diag) ctx.rotate(-Math.PI/4);
-          let fontPx = size*SCALE;
-          ctx.font = `bold ${fontPx}px ${fontStack}`;
-          const maxLen = (diag ? Math.hypot(cw,ch) : cw) * 0.92;
-          const measured = ctx.measureText(text).width;
-          if(measured > maxLen){ fontPx *= maxLen/measured; ctx.font = `bold ${fontPx}px ${fontStack}`; }
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = colorHex;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(text, 0, 0);
-          emb = await doc.embedPng(cv.toDataURL("image/png"));
-          cache.set(key, emb);
-        }
-        p.drawImage(emb, {x:0, y:0, width:w, height:h});
-        setBar("bar-watermark", 20 + Math.round((i+1)/pages.length*70));
+    const SCALE = 2;   // 워터마크 이미지 선명도
+    const pos = wmEffPos();
+    // 미리보기와 똑같은 paintWatermark로 그려 항상 일치. 글자·이미지 모두 위치/가득채우기 지원
+    const cfg = mode === "text" ? {
+      mode:"text",
+      text: document.getElementById("wm-text").value.trim(),
+      size: parseInt(document.getElementById("wm-size").value,10),
+      colorHex: WM_COLORS[document.getElementById("wm-color").value],
+      opacity: parseFloat(document.getElementById("wm-opacity").value),
+      diag: document.getElementById("wm-diag").value === "1",
+      pos
+    } : {
+      mode:"image",
+      img: await loadImageEl(wmImgFile),
+      imgFrac: parseFloat(document.getElementById("wmi-scale").value),
+      opacity: parseFloat(document.getElementById("wmi-opacity").value),
+      pos
+    };
+    const cache = new Map();   // 같은 크기 페이지는 워터마크 이미지 재사용
+    for(let i=0;i<pages.length;i++){
+      const p = pages[i];
+      const {width:w, height:h} = p.getSize();
+      const key = Math.round(w)+"x"+Math.round(h);
+      let emb = cache.get(key);
+      if(!emb){
+        const cw = Math.max(1,Math.round(w*SCALE)), ch = Math.max(1,Math.round(h*SCALE));
+        const cv = document.createElement("canvas"); cv.width=cw; cv.height=ch;
+        const ctx = cv.getContext("2d");
+        paintWatermark(ctx, cw, ch, cfg.mode === "text"
+          ? { mode:"text", text:cfg.text, fontPx:cfg.size*SCALE, colorHex:cfg.colorHex, opacity:cfg.opacity, diag:cfg.diag, pos:cfg.pos }
+          : { mode:"image", img:cfg.img, imgFrac:cfg.imgFrac, opacity:cfg.opacity, pos:cfg.pos });
+        emb = await doc.embedPng(cv.toDataURL("image/png"));
+        cache.set(key, emb);
       }
-    }else{
-      const img = await embedImageFile(doc, wmImgFile);
-      const frac = parseFloat(document.getElementById("wmi-scale").value);
-      const opacity = parseFloat(document.getElementById("wmi-opacity").value);
-      pages.forEach((p,i)=>{
-        const {width:w, height:h} = p.getSize();
-        const iw = w*frac;
-        const ih = iw*img.height/img.width;
-        p.drawImage(img, {x:(w-iw)/2, y:(h-ih)/2, width:iw, height:ih, opacity});
-        setBar("bar-watermark", 20 + Math.round((i+1)/pages.length*70));
-      });
+      p.drawImage(emb, {x:0, y:0, width:w, height:h});
+      setBar("bar-watermark", 20 + Math.round((i+1)/pages.length*70));
     }
     const outBytes = await doc.save();
     setBar("bar-watermark",100);
@@ -2421,11 +2484,13 @@ const MANUAL = [
     one:"모든 페이지에 '배포용' 같은 반투명 글자나 학교 로고·도장을 얹어요.",
     steps:["PDF 1개를 올려요.",
       "'글자' 또는 '이미지(로고·도장)'를 골라요.",
+      "<b>'위치'</b>에서 9칸(모서리·가장자리·가운데) 중 원할 곳을 누르거나, '🔁 페이지 가득 채우기'로 반복해 넣을 수 있어요.",
       "[글자] 문구를 적고 크기·색·진하기·방향(대각선 추천)을 정해요.",
       "[이미지] 로고를 고르고 크기·진하기를 정해요. (투명 배경 PNG 추천)",
-      "'워터마크 넣기' → '파일이름_워터마크.pdf'가 저장돼요."],
+      "아래 <b>미리보기</b>로 확인한 뒤 '워터마크 넣기'를 누르면 '파일이름_워터마크.pdf'가 저장돼요."],
     tips:["글자 워터마크는 한글·한자·기호 어떤 글자든 깨지지 않고 잘 나와요.",
-      "진하기를 '연하게'로 두면 내용을 안 가리고 은은하게 들어가요."] },
+      "진하기를 '연하게'로 두면 내용을 안 가리고 은은하게 들어가요.",
+      "복제·유출 방지 표시는 '🔁 가득 채우기'로 연하게 깔면 효과적이에요. 도장·로고는 모서리(예: 오른쪽 아래)에 두면 깔끔해요."] },
   { title:"🖨️ 모아찍기 · 소책자",
     one:"여러 쪽을 한 장에 모아 종이를 아끼거나, 접으면 책이 되는 소책자를 만들어요.",
     steps:["PDF 1개를 올려요.",
